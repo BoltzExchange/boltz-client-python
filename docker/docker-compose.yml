@@ -1,0 +1,109 @@
+version: "3.7"
+services:
+
+  boltz:
+    hostname: boltz
+    depends_on:
+      - lnd
+    image: boltz/backend
+    entrypoint: "sh -c 'sleep 40; /boltz-backend/bin/boltzd'"
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./data/lnd:/data/lnd/
+      - ./data/boltz/:/root/.boltz/
+
+  bitcoind:
+    hostname: bitcoind
+    image: boltz/bitcoin-core:23.0
+    command: "-regtest -fallbackfee=0.00000253 -zmqpubrawtx=tcp://0.0.0.0:29000 -zmqpubrawblock=tcp://0.0.0.0:29001 -txindex -rpcallowip=0.0.0.0/0 -rpcbind=0.0.0.0 -rpcuser=boltz -rpcpassword=boltz"
+    expose:
+      - 29000
+      - 29001
+      - 18443
+      - 18444
+
+  corelightning:
+    hostname: corelightning
+    depends_on:
+      - bitcoind
+    image: boltz/c-lightning:0.11.2
+    entrypoint: "sh -c 'sleep 15 && lightningd --large-channels --network regtest --bind-addr=0.0.0.0:9735 --bitcoin-rpcconnect=bitcoind --bitcoin-rpcport=18443 --bitcoin-rpcuser=boltz --bitcoin-rpcpassword=boltz'"
+    expose:
+      - 9735
+    volumes:
+      - ./data/corelightning:/root/.lightning/
+
+  lnd:
+    hostname: lnd
+    depends_on:
+      - bitcoind
+    image: boltz/lnd:0.15.2-beta
+    restart: on-failure
+    entrypoint: "sh -c 'sleep 20; lnd --listen=lnd:9735 --rpclisten=lnd:10009 --restlisten=lnd:8081 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=boltz --bitcoind.rpcpass=boltz --noseedbackup --protocol.wumbo-channels'"
+    ports:
+      - 8081:8081
+      - 10009:10009
+    expose:
+      - 8081
+      - 9735
+      - 10009
+    volumes:
+      - ./data/lnd:/root/.lnd/
+
+  electrs:
+    depends_on:
+      - bitcoind
+    hostname: electrs
+    image: getumbrel/electrs:latest
+    environment:
+      ELECTRS_ELECTRUM_RPC_ADDR: "electrs:50001"
+      ELECTRS_DAEMON_RPC_ADDR: "bitcoind:18443"
+      ELECTRS_DAEMON_P2P_ADDR: "bitcoind:18444"
+    entrypoint: "sh -c 'sleep 15 && electrs'"
+    ports:
+      - 50001:50001
+    volumes:
+      - ./data/electrs/:/data/.electrs/
+
+  mempool-web:
+    restart: on-failure
+    depends_on:
+      - mempool-api
+    environment:
+      FRONTEND_HTTP_PORT: "8080"
+      BACKEND_MAINNET_HTTP_HOST: "mempool-api"
+    image: mempool/frontend:latest
+    ports:
+      - 8080:8080
+
+  mempool-api:
+    depends_on:
+      - electrs
+      - mempool-db
+    environment:
+      MEMPOOL_BACKEND: "electrum"
+      ELECTRUM_HOST: electrs
+      ELECTRUM_PORT: "50001"
+      ELECTRUM_TLS_ENABLED: "false"
+      CORE_RPC_HOST: bitcoind
+      CORE_RPC_PORT: "18443"
+      CORE_RPC_USERNAME: "boltz"
+      CORE_RPC_PASSWORD: "boltz"
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: "mempool-db"
+      DATABASE_DATABASE: "mempool"
+      DATABASE_USERNAME: "mempool"
+      DATABASE_PASSWORD: "mempool"
+      STATISTICS_ENABLED: "true"
+    image: mempool/backend:latest
+    restart: on-failure
+
+  mempool-db:
+    environment:
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASSWORD: "mempool"
+      MYSQL_ROOT_PASSWORD: "admin"
+    image: mariadb:10.5.8

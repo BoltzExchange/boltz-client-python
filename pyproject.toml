@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "boltz_client"
+version = "0.1.0"
+description = ""
+authors = ["dni <office@dnilabs.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10 | ^3.9"
+httpx = "^0.23.1"
+loguru = "^0.6.0"
+embit = "^0.6.1"
+pydantic = "^1.10.2"
+websockets = "^10.4"
+
+[tool.poetry.dev-dependencies]
+isort = "^5.10.1"
+pytest = "^7.1.2"
+black = "^22.6.0"
+mypy = "^0.971"
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.20.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+boltz = "boltz_client.cli:main"
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+ignore_missing_imports = "True"
+
+[tool.pytest.ini_options]
+testpaths = [
+  "tests"
+]
