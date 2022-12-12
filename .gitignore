@@ -17,6 +17,7 @@ __bundle__
 
 coverage.xml
 
+docker/data
 docker/data/*
 !docker/data/boltz
 docker/data/boltz/*
