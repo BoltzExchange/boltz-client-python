@@ -7,9 +7,7 @@ authors = ["dni <office@dnilabs.com>"]
 [tool.poetry.dependencies]
 python = "^3.10 | ^3.9"
 httpx = "^0.23.1"
-loguru = "^0.6.0"
 embit = "^0.6.1"
-pydantic = "^1.10.2"
 websockets = "^10.4"
 
 [tool.poetry.dev-dependencies]
@@ -35,6 +33,8 @@ profile = "black"
 ignore_missing_imports = "True"
 
 [tool.pytest.ini_options]
+log_cli = true
+log_level = "DEBUG"
 testpaths = [
   "tests"
 ]

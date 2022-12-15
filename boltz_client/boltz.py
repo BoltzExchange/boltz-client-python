@@ -1,22 +1,20 @@
-import asyncio
 import os
-from binascii import hexlify, unhexlify
+import httpx
+import logging as logger
+logger.basicConfig(level=logger.DEBUG, format='%(asctime)s: %(levelname)s - %(message)s')
+
+from dataclasses import dataclass
+from binascii import hexlify
 from hashlib import sha256
 from typing import Optional
 
-import httpx
-
 from embit import ec, script
 from embit.networks import NETWORKS
-from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
+# from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
-from loguru import logger
 from .helpers import req_wrap
 from .mempool import MempoolClient
 
-
-
-from pydantic.main import BaseModel
 
 
 class BoltzLimitException(Exception):
@@ -25,19 +23,18 @@ class BoltzLimitException(Exception):
 class BoltzApiException(Exception):
     pass
 
-class MempoolApiException(Exception):
-    pass
 
-
-class BoltzConfig(BaseModel):
-    api_url: str = "https://boltz.exchange/api"
-    referral_id: str = "dni"
-    mempool_url: str = "https://mempool.space"
+@dataclass
+class BoltzConfig:
     network: str = "main"
+    api_url: str = "https://boltz.exchange/api"
+    mempool_url: str = "https://mempool.space"
+    referral_id: str = "dni"
 
 
 class BoltzClient:
     def __init__(self, config: BoltzConfig):
+        logger.info(f"initialized boltz client: {config.api_url}")
         self._cfg = config
         self.log_config()
 
@@ -51,11 +48,11 @@ class BoltzClient:
 
 
     def log_config(self):
-        for key, value in self._cfg.dict().items():
-            logger.debug(f"{key}: {value}")
+        for key, value in self._cfg.__dataclass_fields__.items():
+            logger.debug(f"{key}: {getattr(self._cfg, key)}")
 
 
-    def request_json(self, funcname, *args, **kwargs) -> Optional[dict]:
+    def request(self, funcname, *args, **kwargs) -> Optional[dict]:
         try:
             return req_wrap(funcname, *args, **kwargs)
         except httpx.RequestError as exc:
@@ -67,7 +64,7 @@ class BoltzClient:
 
 
     def check_version(self):
-        self.request_json(
+        return self.request(
             "get",
             f"{self._cfg.api_url}/version",
             headers={"Content-Type": "application/json"},
@@ -75,7 +72,7 @@ class BoltzClient:
 
 
     def get_boltz_pairs(self):
-        return self.request_json(
+        return self.request(
             "get",
             f"{self._cfg.api_url}/getpairs",
             headers={"Content-Type": "application/json"},

@@ -1,4 +1,5 @@
 import json
+import logging
 import httpx
 import websockets
 
@@ -6,9 +7,10 @@ from typing import Optional
 
 from binascii import hexlify
 from embit.transaction import Transaction
-from loguru import logger
 
 from .helpers import req_wrap
+
+logger = logging.getLogger()
 
 
 class MempoolApiException(Exception):
@@ -20,8 +22,7 @@ class MempoolClient:
         self._api_url = url
 
         # just check of mempool is available
-        print(self.get_blockheight())
-        pass
+        self.get_blockheight()
 
     def request(self, funcname, *args, **kwargs):
         try:
@@ -30,7 +31,7 @@ class MempoolClient:
             msg = f"unreachable: {exc.request.url!r}."
             raise MempoolApiException(f"mempool api connection error: {msg}")
         except httpx.HTTPStatusError as exc:
-            msg = f"{exc.response.status_code} while requesting {exc.request.url!r}. message: {exc.response.json()['error']}"
+            msg = f"{exc.response.status_code} while requesting {exc.request.url!r}. message: {exc.response.text}"
             raise MempoolApiException(f"mempool api status error: {msg}")
 
 
@@ -73,6 +74,11 @@ class MempoolClient:
             headers={"Content-Type": "text/plain"},
         )
         if data:
+            return data
+
+    def get_tx_from_address(self, address: str):
+        data = self.get_txs_from_address(address)
+        if data:
             return self.get_tx_from_txs(data, address)
 
 
@@ -87,17 +93,15 @@ class MempoolClient:
                     txid = a_tx["txid"]
                     vout_cnt = i
                     vout_amount = vout["value"]
-
         return tx, txid, vout_cnt, vout_amount
 
 
-    async def send_onchain_tx(self, tx: Transaction):
-        raw = hexlify(tx.serialize())
-        self.request(
+    def send_onchain_tx(self, tx: bytes):
+        return self.request(
             "post",
             f"{self._api_url}/api/tx",
             headers={"Content-Type": "text/plain"},
-            content=raw,
+            content=tx,
         )
 
 
