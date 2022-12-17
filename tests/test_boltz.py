@@ -9,7 +9,7 @@ from boltz_client.boltz import (
     BoltzApiException,
     BoltzLimitException,
     BoltzNotFoundException,
-    BoltzCreateSwapResponse,
+    BoltzSwapResponse,
     BoltzSwapStatusResponse
 )
 
@@ -70,7 +70,7 @@ async def test_create_swap_invalid_payment_request(client):
 async def test_create_swap_and_check_status(client, pr):
     refund_privkey_wif, swap = client.create_swap(pr, 10000)
     assert type(refund_privkey_wif) == str
-    assert type(swap) == BoltzCreateSwapResponse
+    assert type(swap) == BoltzSwapResponse
     assert hasattr(swap, "id")
 
     # combining those to test save creating an extra swap :)

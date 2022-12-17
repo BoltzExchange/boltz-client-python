@@ -1,6 +1,6 @@
 import click
 
-from boltz_client.boltz import BoltzConfig, BoltzClient, BoltzCreateSwapResponse
+from boltz_client.boltz import BoltzConfig, BoltzClient
 
 
 config = BoltzConfig(

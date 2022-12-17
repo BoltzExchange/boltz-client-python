@@ -72,6 +72,7 @@ class MempoolClient:
             headers={"Content-Type": "text/plain"},
         )
 
+
     def get_tx_from_address(self, address: str):
         data = self.get_txs_from_address(address)
         return self.get_tx_from_txs(data, address)
@@ -80,15 +81,27 @@ class MempoolClient:
     def get_tx_from_txs(self, txs, address):
         if len(txs) == 0:
             return None
-        tx = txid = vout_cnt = vout_amount = None
+        for tx in txs:
+            for i, vout in enumerate(tx["vout"]):
+                if vout["scriptpubkey_address"] == address:
+                    # tx = a_tx
+                    # txid = a_tx["txid"]
+                    # vout_cnt = i
+                    # vout_amount = vout["value"]
+                    return tx, vout
+
+
+    def get_vout_from_tx(self, tx):
+        if len(txs) == 0:
+            return None
         for a_tx in txs:
             for i, vout in enumerate(a_tx["vout"]):
                 if vout["scriptpubkey_address"] == address:
-                    tx = a_tx
-                    txid = a_tx["txid"]
-                    vout_cnt = i
-                    vout_amount = vout["value"]
-        return tx, txid, vout_cnt, vout_amount
+                    # tx = a_tx
+                    # txid = a_tx["txid"]
+                    # vout_cnt = i
+                    # vout_amount = vout["value"]
+                    return a_tx, vout
 
 
     def send_onchain_tx(self, tx: bytes):
@@ -134,3 +147,88 @@ class MempoolClient:
                 )
         else:
             logger.error(f"Boltz - mempool lockup tx not found.")
+
+# def start_onchain_listener(address) -> asyncio.Task:
+#     return create_task_log_exception(
+#         address, wait_for_onchain_tx(swap, swap_websocket_callback_restart)
+#     )
+
+
+# async def start_confirmation_listener(
+#     swap: ReverseSubmarineSwap, mempool_lockup_tx
+# ) -> asyncio.Task:
+#     logger.debug(f"Boltz - reverse swap, waiting for confirmation...")
+
+#     tx, txid, *_ = mempool_lockup_tx
+
+#     confirmed = await wait_for_websocket_message({"track-tx": txid}, "txConfirmed")
+#     if confirmed:
+#         logger.debug(f"Boltz - reverse swap lockup transaction confirmed! claiming...")
+#         await create_claim_tx(swap, mempool_lockup_tx)
+#     else:
+#         logger.debug(f"Boltz - reverse swap lockup transaction still not confirmed.")
+
+
+# def create_task_log_exception(swap_id: str, awaitable: Awaitable) -> asyncio.Task:
+#     async def _log_exception(awaitable):
+#         try:
+#             return await awaitable
+#         except Exception as e:
+#             logger.error(f"Boltz - reverse swap failed!: {swap_id} - {e}")
+#             await update_swap_status(swap_id, "failed")
+#     return asyncio.create_task(_log_exception(awaitable))
+
+
+# async def swap_websocket_callback_initial(swap):
+#     wstask = asyncio.create_task(
+#         wait_for_websocket_message(
+#             {"track-address": swap.lockup_address}, "address-transactions"
+#         )
+#     )
+#     logger.debug(
+#         f"Boltz - created task, waiting on mempool websocket for address: {swap.lockup_address}"
+#     )
+
+#     # create_task is used because pay_invoice is stuck as long as boltz does not
+#     # see the onchain claim tx and it ends up in deadlock
+#     task: asyncio.Task = create_task_log_exception(
+#         swap.id,
+#         pay_invoice(
+#             wallet_id=swap.wallet,
+#             payment_request=swap.invoice,
+#             description=f"reverse swap for {swap.amount} sats on boltz.exchange",
+#             extra={"tag": "boltz", "swap_id": swap.id, "reverse": True},
+#         ),
+#     )
+#     logger.debug(f"Boltz - task pay_invoice created, reverse swap_id: {swap.id}")
+
+#     done, pending = await asyncio.wait(
+#         [task, wstask], return_when=asyncio.FIRST_COMPLETED
+#     )
+#     message = done.pop().result()
+
+#     # pay_invoice already failed, do not wait for onchain tx anymore
+#     if message is None:
+#         logger.debug(f"Boltz - pay_invoice already failed cancel websocket task.")
+#         wstask.cancel()
+#         raise
+
+#     return task, message
+
+
+# async def swap_websocket_callback_restart(swap):
+#     logger.debug(f"Boltz - swap_websocket_callback_restart called...")
+#     message = await wait_for_websocket_message(
+#         {"track-address": swap.lockup_address}, "address-transactions"
+#     )
+#     return None, message
+
+
+# def check_block_height(block_height: int):
+#     current_block_height = get_mempool_blockheight()
+#     if current_block_height <= block_height:
+#         msg = f"refund not possible, timeout_block_height ({block_height}) is not yet exceeded ({current_block_height})"
+#         logger.debug(msg)
+#         raise Exception(msg)
+
+
