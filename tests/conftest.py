@@ -1,10 +1,21 @@
 import asyncio
+import json
+import os
+import time
 import pytest_asyncio
 
 from binascii import hexlify
 from embit.transaction import Transaction
 
 from boltz_client.boltz import BoltzConfig, BoltzClient
+
+docker_name = "boltz-client-corelightning-1"
+docker_cmd = f"docker exec {docker_name} lightning-cli --network regtest"
+
+def get_invoice(sats: int, prefix: str) -> dict:
+    msats = sats * 1000
+    stdout = os.popen(f"{docker_cmd} invoice {msats} {prefix}-{time.time()} test").read()
+    return json.loads(stdout)
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -16,7 +27,11 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def client():
-    config = BoltzConfig(network="regtest", api_url="http://localhost:9001", mempool_url="http://localhost:8080")
+    config = BoltzConfig(
+        network="regtest",
+        api_url="http://localhost:9001",
+        mempool_url="http://localhost:8080"
+    )
     client = BoltzClient(config)
     yield client
 
@@ -33,3 +48,10 @@ async def raw_tx():
     tx = Transaction()
     raw_tx = hexlify(tx.serialize())
     yield raw_tx
+
+
+@pytest_asyncio.fixture(scope="session")
+async def pr():
+    invoice = get_invoice(10000, "pr-1")
+    yield invoice["bolt11"]
+

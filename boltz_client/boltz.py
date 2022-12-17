@@ -25,6 +25,16 @@ class BoltzApiException(Exception):
 
 
 @dataclass
+class BoltzCreateSwapResponse:
+    id: str
+    bip21: str
+    address: str
+    redeemScript: str
+    acceptZeroConf: bool
+    expectedAmount: int
+    timeoutBlockHeight: int
+
+@dataclass
 class BoltzConfig:
     network: str = "main"
     api_url: str = "https://boltz.exchange/api"
@@ -52,7 +62,7 @@ class BoltzClient:
             logger.debug(f"{key}: {getattr(self._cfg, key)}")
 
 
-    def request(self, funcname, *args, **kwargs) -> Optional[dict]:
+    def request(self, funcname, *args, **kwargs) -> dict:
         try:
             return req_wrap(funcname, *args, **kwargs)
         except httpx.RequestError as exc:
@@ -71,20 +81,15 @@ class BoltzClient:
         )
 
 
-    def get_boltz_pairs(self):
-        return self.request(
+    def set_boltz_limits(self) -> None:
+        data = self.request(
             "get",
             f"{self._cfg.api_url}/getpairs",
             headers={"Content-Type": "application/json"},
         )
-
-
-    def set_boltz_limits(self):
-        pairs = self.get_boltz_pairs()
-        if pairs:
-            limits = pairs["pairs"]["BTC/BTC"]["limits"]
-            self.limit_maximal = limits["maximal"]
-            self.limit_minimal = limits["minimal"]
+        limits = data["pairs"]["BTC/BTC"]["limits"]
+        self.limit_maximal = limits["maximal"]
+        self.limit_minimal = limits["minimal"]
 
 
     def check_boltz_limits(self, amount: int) -> None:
@@ -101,11 +106,10 @@ class BoltzClient:
         return privkey_wif, pubkey_hex
 
 
-    async def create_swap(self, payment_request: str, amount: int = 0) -> tuple[str, dict]:
+    def create_swap(self, payment_request: str, amount: int = 0) -> tuple[str, BoltzCreateSwapResponse]:
         self.check_boltz_limits(amount)
         refund_privkey_wif, refund_pubkey_hex = self.create_key_pair()
-        logger.info(f"refund_privkey_wif: {refund_privkey_wif}")
-        res = req_wrap(
+        data = self.request(
             "post",
             f"{self._cfg.api_url}/createswap",
             json={
@@ -118,12 +122,7 @@ class BoltzClient:
             },
             headers={"Content-Type": "application/json"},
         )
-        if res:
-            res = res.json()
-            logger.info(
-                f"Boltz - created normal swap, boltz_id: {res['id']}."
-            )
-            return refund_privkey_wif, res
+        return refund_privkey_wif, BoltzCreateSwapResponse(**data)
 
 
     async def create_reverse_swap(self, amount: int = 0) -> tuple[str, dict]:

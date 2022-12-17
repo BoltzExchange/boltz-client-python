@@ -24,7 +24,7 @@ class MempoolClient:
         # just check of mempool is available
         self.get_blockheight()
 
-    def request(self, funcname, *args, **kwargs):
+    def request(self, funcname, *args, **kwargs) -> dict:
         try:
             return req_wrap(funcname, *args, **kwargs)
         except httpx.RequestError as exc:
@@ -56,30 +56,25 @@ class MempoolClient:
         return int(data["economyFee"])
 
 
-    def get_blockheight(self) -> Optional[int]:
+    def get_blockheight(self) -> int:
         data = self.request(
             "get",
             f"{self._api_url}/api/blocks/tip/height",
             headers={"Content-Type": "text/plain"},
         )
-        if not data:
-            return None
-        return int(data)
+        return int(data["text"])
 
 
-    def get_txs_from_address(self, address: str):
-        data = self.request(
+    def get_txs_from_address(self, address: str) -> dict:
+        return self.request(
             "get",
             f"{self._api_url}/api/address/{address}/txs",
             headers={"Content-Type": "text/plain"},
         )
-        if data:
-            return data
 
     def get_tx_from_address(self, address: str):
         data = self.get_txs_from_address(address)
-        if data:
-            return self.get_tx_from_txs(data, address)
+        return self.get_tx_from_txs(data, address)
 
 
     def get_tx_from_txs(self, txs, address):
