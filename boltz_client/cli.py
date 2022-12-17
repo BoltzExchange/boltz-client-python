@@ -45,14 +45,15 @@ def create_reverse_swap():
 
 @click.command()
 @click.argument('id', type=str)
-def swap_status():
+def swap_status(id):
     """
     get swap status
     retrieves the status of your boltz swap from the api
 
     ID is the id of your boltz swap
     """
-    pass
+    data = wrapper(id, func_name="swap_status")
+    click.echo(data)
 
 
 @click.command()

@@ -23,6 +23,14 @@ class BoltzLimitException(Exception):
 class BoltzApiException(Exception):
     pass
 
+class BoltzNotFoundException(Exception):
+    pass
+
+
+@dataclass
+class BoltzSwapStatusResponse:
+    status: str
+
 
 @dataclass
 class BoltzCreateSwapResponse:
@@ -33,6 +41,7 @@ class BoltzCreateSwapResponse:
     acceptZeroConf: bool
     expectedAmount: int
     timeoutBlockHeight: int
+
 
 @dataclass
 class BoltzConfig:
@@ -53,12 +62,12 @@ class BoltzClient:
         self.limit_maximal = 0
 
         self.check_version()
-        self.set_boltz_limits()
+        self.set_limits()
         self.mempool = MempoolClient(self._cfg.mempool_url)
 
 
     def log_config(self):
-        for key, value in self._cfg.__dataclass_fields__.items():
+        for key in self._cfg.__dataclass_fields__:
             logger.debug(f"{key}: {getattr(self._cfg, key)}")
 
 
@@ -69,6 +78,8 @@ class BoltzClient:
             msg = f"unreachable: {exc.request.url!r}."
             raise BoltzApiException(f"boltz api connection error: {msg}")
         except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                raise BoltzNotFoundException(exc.response.json()['error'])
             msg = f"{exc.response.status_code} while requesting {exc.request.url!r}. message: {exc.response.json()['error']}"
             raise BoltzApiException(f"boltz api status error: {msg}")
 
@@ -81,7 +92,7 @@ class BoltzClient:
         )
 
 
-    def set_boltz_limits(self) -> None:
+    def set_limits(self) -> None:
         data = self.request(
             "get",
             f"{self._cfg.api_url}/getpairs",
@@ -92,11 +103,21 @@ class BoltzClient:
         self.limit_minimal = limits["minimal"]
 
 
-    def check_boltz_limits(self, amount: int) -> None:
+    def check_limits(self, amount: int) -> None:
         valid = amount >= self.limit_minimal and amount <= self.limit_maximal
         if not valid:
             msg = f"Boltz - swap not in boltz limits, amount: {amount}"
             raise BoltzLimitException(msg)
+
+
+    def swap_status(self, boltz_id: str) -> BoltzSwapStatusResponse:
+        data = self.request(
+            "post",
+            f"{self._cfg.api_url}/swapstatus",
+            json={"id": boltz_id},
+            headers={"Content-Type": "application/json"},
+        )
+        return BoltzSwapStatusResponse(**data)
 
 
     def create_key_pair(self) -> tuple[str, str]:
@@ -107,7 +128,7 @@ class BoltzClient:
 
 
     def create_swap(self, payment_request: str, amount: int = 0) -> tuple[str, BoltzCreateSwapResponse]:
-        self.check_boltz_limits(amount)
+        self.check_limits(amount)
         refund_privkey_wif, refund_pubkey_hex = self.create_key_pair()
         data = self.request(
             "post",
@@ -137,7 +158,7 @@ class BoltzClient:
         - Server fulfills HTLC using preimage.
         Note: expected_onchain_amount_sat is BEFORE deducting the on-chain claim tx fee.
         """
-        self.check_boltz_limits(amount)
+        self.check_limits(amount)
         claim_privkey_wif, claim_pubkey_hex = self.create_key_pair()
 
         logger.info(f"claim_privkey_wif: {claim_privkey_wif}")
@@ -376,12 +397,3 @@ class BoltzClient:
 #             swap_status.mempool = "transaction.unconfirmed"
 
 #     return swap_status
-
-
-# def get_boltz_status(boltzid):
-#     res = req_wrap(
-#         "post",
-#         f"{BOLTZ_URL}/swapstatus",
-#         json={"id": boltzid},
-#     )
-#     return res.json()
