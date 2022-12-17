@@ -1,4 +1,3 @@
-import os
 import httpx
 import logging as logger
 logger.basicConfig(level=logger.DEBUG, format='%(asctime)s: %(levelname)s - %(message)s')
@@ -8,7 +7,6 @@ from dataclasses import dataclass
 from .onchain import create_key_pair, create_preimage, create_onchain_tx
 from .helpers import req_wrap
 from .mempool import MempoolClient
-
 
 
 class BoltzLimitException(Exception):
@@ -47,26 +45,17 @@ class BoltzConfig:
     network: str = "main"
     api_url: str = "https://boltz.exchange/api"
     mempool_url: str = "https://mempool.space"
+    mempool_ws_url: str = "wss://mempool.space"
     referral_id: str = "dni"
 
 
 class BoltzClient:
     def __init__(self, config: BoltzConfig):
-        logger.info(f"initialized boltz client: {config.api_url}")
         self._cfg = config
-        self.log_config()
-
         self.limit_minimal = 0
         self.limit_maximal = 0
-
-        self.check_version()
         self.set_limits()
-        self.mempool = MempoolClient(self._cfg.mempool_url)
-
-
-    def log_config(self):
-        for key in self._cfg.__dataclass_fields__:
-            logger.debug(f"{key}: {getattr(self._cfg, key)}")
+        self.mempool = MempoolClient(self._cfg.mempool_url, self._cfg.mempool_ws_url)
 
 
     def request(self, funcname, *args, **kwargs) -> dict:
@@ -147,26 +136,12 @@ class BoltzClient:
         return refund_privkey_wif, BoltzSwapResponse(**data)
 
 
-    async def create_reverse_swap(self, amount: int = 0) -> tuple[str, BoltzReverseSwapResponse]:
-        """
-        explanation taken from electrum
-        send on Lightning, receive on-chain
-        - User generates preimage, RHASH. Sends RHASH to server.
-        - Server creates an LN invoice for RHASH.
-        - User pays LN invoice - except server needs to hold the HTLC as preimage is unknown.
-        - Server creates on-chain output locked to RHASH.
-        - User spends on-chain output, revealing preimage.
-        - Server fulfills HTLC using preimage.
-        Note: expected_onchain_amount_sat is BEFORE deducting the on-chain claim tx fee.
-        """
+    async def create_reverse_swap(self, amount: int = 0) -> tuple[str, str, BoltzReverseSwapResponse]:
+
         self.check_limits(amount)
 
         claim_privkey_wif, claim_pubkey_hex = create_key_pair(self._cfg.network)
-
-        logger.info(f"claim_privkey_wif: {claim_privkey_wif}")
-
         preimage_hex, preimage_hash = create_preimage()
-        logger.info(f"preimage hex: {preimage_hex}")
 
         data = self.request(
             "post",
@@ -185,12 +160,15 @@ class BoltzClient:
 
         swap = BoltzReverseSwapResponse(**data)
 
-        logger.info(
-            f"Boltz - created reverse swap, boltz_id: {swap.id}."
-        )
+        return claim_privkey_wif, preimage_hex, swap
 
-#         task = create_task_log_exception(
-#             swap.id, wait_for_onchain_tx(swap, swap_websocket_callback_initial)
-#         )
 
-        return claim_privkey_wif, swap
+    async def wait_for_reverse_swap(self, lockup_address, instant_settlement: bool = True) -> None:
+        lockup_tx = self.mempool.get_tx_from_address(lockup_address)
+        if lockup_tx:
+            if not instant_settlement and lockup_tx.status != "confirmed":
+                await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
+        else:
+            await self.mempool.wait_for_address_transactions(lockup_address)
+
+        await self.create_claim_tx(lockup_tx)

@@ -8,6 +8,8 @@ from embit import ec, script
 from embit.networks import NETWORKS
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
+from .mempool import LockupData
+
 
 def create_preimage() -> tuple[str, str]:
     preimage = os.urandom(32)
@@ -21,13 +23,6 @@ def create_key_pair(network) -> tuple[str, str]:
     pubkey_hex = hexlify(privkey.sec()).decode("UTF-8")
     privkey_wif = privkey.wif(net)
     return privkey_wif, pubkey_hex
-
-
-@dataclass
-class LockupData:
-    txid: str
-    vout_cnt: int
-    vout_amount: int
 
 
 def create_onchain_tx(
