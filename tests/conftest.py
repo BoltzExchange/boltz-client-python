@@ -7,15 +7,9 @@ import pytest_asyncio
 from binascii import hexlify
 from embit.transaction import Transaction
 
+from .helpers import get_invoice, mine_blocks
+
 from boltz_client.boltz import BoltzConfig, BoltzClient
-
-docker_name = "boltz-client-corelightning-1"
-docker_cmd = f"docker exec {docker_name} lightning-cli --network regtest"
-
-def get_invoice(sats: int, prefix: str) -> dict:
-    msats = sats * 1000
-    stdout = os.popen(f"{docker_cmd} invoice {msats} {prefix}-{time.time()} test").read()
-    return json.loads(stdout)
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -53,5 +47,11 @@ async def raw_tx():
 @pytest_asyncio.fixture(scope="session")
 async def pr():
     invoice = get_invoice(10000, "pr-1")
+    yield invoice["bolt11"]
+
+
+@pytest_asyncio.fixture(scope="session")
+async def pr_small():
+    invoice = get_invoice(5000, "pr-1")
     yield invoice["bolt11"]
 
