@@ -17,8 +17,12 @@ __bundle__
 
 coverage.xml
 
-docker/data
 docker/data/*
+
+!docker/data/electrs
+docker/data/electrs/*
+!docker/data/electrs/config.toml
+
 !docker/data/boltz
 docker/data/boltz/*
 !docker/data/boltz/boltz.conf
