@@ -12,8 +12,10 @@ from .mempool import MempoolClient
 class BoltzLimitException(Exception):
     pass
 
+
 class BoltzApiException(Exception):
     pass
+
 
 class BoltzNotFoundException(Exception):
     pass
@@ -108,9 +110,10 @@ class BoltzClient:
 
 
     def claim_reverse_swap(self, lockup_tx_id: str, receive_address: str):
-        lockup_tx = self.mempool.get_lockup_tx()
-        tx = create_onchain_tx(address, lockup_tx, fees)
-        self.mempool.send_onchain_tx(tx)
+        pass
+        # lockup_tx = self.mempool.get_lockup_tx()
+        # tx = create_onchain_tx(address, lockup_tx, fees)
+        # self.mempool.send_onchain_tx(tx)
 
 
     def refund_swap(self, lockup_tx_id: str, receive_address: str):
@@ -171,4 +174,4 @@ class BoltzClient:
         else:
             await self.mempool.wait_for_address_transactions(lockup_address)
 
-        await self.create_claim_tx(lockup_tx)
+        # await self.create_claim_tx(lockup_tx)

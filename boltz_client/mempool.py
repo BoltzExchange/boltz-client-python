@@ -2,7 +2,9 @@ import json
 import httpx
 import websockets
 
+from typing import Optional
 from dataclasses import dataclass
+
 
 from .helpers import req_wrap
 
@@ -14,8 +16,10 @@ class LockupData:
     vout_cnt: int
     vout_amount: int
 
+
 class MempoolApiException(Exception):
     pass
+
 
 class MempoolBlockHeightException(Exception):
     pass
@@ -94,7 +98,7 @@ class MempoolClient:
             raise MempoolBlockHeightException(msg)
 
 
-    def get_tx_from_address(self, address: str) -> LockupData | None:
+    def get_tx_from_address(self, address: str) -> Optional[LockupData]:
         txs = self.request(
             "get",
             f"{self._api_url}/api/address/{address}/txs",
