@@ -5,7 +5,6 @@ import websockets
 from typing import Optional
 from dataclasses import dataclass
 
-
 from .helpers import req_wrap
 
 
@@ -47,7 +46,7 @@ class MempoolClient:
     async def wait_for_websocket_message(self, send, message_string):
         async for websocket in websockets.connect(self._ws_url):
             try:
-                await websocket.send(json.dumps({"action": "want", "data": ["blocks"]}))
+                await websocket.send(json.dumps({"action": "want", "data": ["blocks", "mempool-block"]}))
                 await websocket.send(json.dumps(send))
                 async for raw in websocket:
                     message = json.loads(raw)
@@ -58,11 +57,11 @@ class MempoolClient:
 
 
     async def wait_for_tx_confirmed(self, txid: str):
-        return await self.wait_for_websocket_message({"txid": txid}, "txConfirmed")
+        return await self.wait_for_websocket_message({"track-tx": txid }, "txConfirmed")
 
 
     async def wait_for_address_transactions(self, address: str):
-        return await self.wait_for_websocket_message({"track-address": address}, "address-transactions")
+        return await self.wait_for_websocket_message({"track-address": address }, "address-transactions")
 
 
     def get_fee_estimation(self) -> int:

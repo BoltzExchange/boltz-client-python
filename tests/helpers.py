@@ -15,7 +15,7 @@ docker_bitcoin_cli = f"{docker_bitcoin} bitcoin-cli -rpcuser={docker_bitcoin_rpc
 
 
 def run_cmd(cmd: str) -> str:
-    return os.popen(cmd).read()
+    return os.popen(cmd).read().strip()
 
 
 def run_cmd_json(cmd: str) -> dict:
