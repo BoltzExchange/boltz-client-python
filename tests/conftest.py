@@ -24,7 +24,8 @@ async def client():
     config = BoltzConfig(
         network="regtest",
         api_url="http://localhost:9001",
-        mempool_url="http://localhost:8080"
+        mempool_url="http://localhost:8080",
+        mempool_ws_url="ws://localhost:8080/api/v1/ws",
     )
     client = BoltzClient(config)
     yield client
