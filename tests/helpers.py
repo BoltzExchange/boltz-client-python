@@ -3,12 +3,15 @@ import time
 import json
 
 
+docker_bitcoin_rpc = "boltz"
 docker_prefix = "boltz-client"
 docker_cmd = f"docker exec"
-docker_lightning_cmd = f"{docker_cmd} {docker_prefix}-corelightning-1"
-docker_bitcoin_cmd = f"{docker_cmd} {docker_prefix}-bitcoind-1"
-docker_lightning_cli= f"{docker_lightning_cmd} lightning-cli --network regtest"
-docker_bitcoin_cli= f"{docker_bitcoin_cmd} bitcoin-cli -rpcuser=boltz -rpcpassword=boltz -regtest"
+
+docker_lightning = f"{docker_cmd} {docker_prefix}-corelightning-1"
+docker_lightning_cli = f"{docker_lightning} lightning-cli --network regtest"
+
+docker_bitcoin = f"{docker_cmd} {docker_prefix}-bitcoind-1"
+docker_bitcoin_cli = f"{docker_bitcoin} bitcoin-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc} -regtest"
 
 
 def run_cmd(cmd: str) -> str:
@@ -30,3 +33,8 @@ def mine_blocks(blocks: int = 1) -> str:
 
 def get_address(address_type: str = "bech32") -> str:
     return run_cmd(f"{docker_bitcoin_cli} getnewaddress {address_type}")
+
+
+def pay_onchain(address: str, sats: int) -> str:
+    btc = sats * 0.00000001
+    return run_cmd(f"{docker_bitcoin_cli} sendtoaddress {address} {btc}")
