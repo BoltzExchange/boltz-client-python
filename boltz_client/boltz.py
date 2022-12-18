@@ -1,7 +1,9 @@
 import httpx
+
 import logging as logger
 logger.basicConfig(level=logger.DEBUG, format='%(asctime)s: %(levelname)s - %(message)s')
 
+from typing import Optional
 from dataclasses import dataclass
 
 from .onchain import create_key_pair, create_preimage, create_onchain_tx
@@ -21,9 +23,15 @@ class BoltzNotFoundException(Exception):
     pass
 
 
+class BoltzSwapStatusException(Exception):
+    pass
+
+
 @dataclass
 class BoltzSwapStatusResponse:
     status: str
+    failureReason: Optional[str] = None
+    zeroConfRejected: Optional[str] = None
 
 
 @dataclass
@@ -46,8 +54,8 @@ class BoltzReverseSwapResponse:
 class BoltzConfig:
     network: str = "main"
     api_url: str = "https://boltz.exchange/api"
-    mempool_url: str = "https://mempool.space"
-    mempool_ws_url: str = "wss://mempool.space"
+    mempool_url: str = "https://mempool.space/api"
+    mempool_ws_url: str = "wss://mempool.space/api/v1/ws"
     referral_id: str = "dni"
 
 
@@ -106,7 +114,12 @@ class BoltzClient:
             json={"id": boltz_id},
             headers={"Content-Type": "application/json"},
         )
-        return BoltzSwapStatusResponse(**data)
+        status = BoltzSwapStatusResponse(**data)
+
+        if status.failureReason:
+            raise BoltzSwapStatusException(status.failureReason)
+
+        return status
 
 
     def claim_reverse_swap(self, lockup_tx_id: str, receive_address: str):
