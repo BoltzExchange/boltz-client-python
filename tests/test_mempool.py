@@ -11,24 +11,23 @@ async def test_api_exception():
         BoltzClient(config)
 
 
-blockheight_regtest = 170
-
 @pytest.mark.asyncio
 async def test_blockheight(client):
     blockheight = client.mempool.get_blockheight()
     assert type(blockheight) == int
-    assert blockheight == blockheight_regtest
 
 
 @pytest.mark.asyncio
 async def test_check_blockheight_exception(client):
     with pytest.raises(MempoolBlockHeightException):
-        client.mempool.check_block_height(blockheight_regtest + 1)
+        blockheight = client.mempool.get_blockheight()
+        client.mempool.check_block_height(blockheight + 1)
 
 
 @pytest.mark.asyncio
 async def test_check_blockheight(client):
-    client.mempool.check_block_height(blockheight_regtest)
+    blockheight = client.mempool.get_blockheight()
+    client.mempool.check_block_height(blockheight)
 
 
 @pytest.mark.asyncio
