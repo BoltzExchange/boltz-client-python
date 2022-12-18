@@ -19,6 +19,7 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest_asyncio.fixture(scope="session")
 async def client():
     config = BoltzConfig(
@@ -53,6 +54,12 @@ async def pr():
 
 @pytest_asyncio.fixture(scope="session")
 async def pr_small():
-    invoice = get_invoice(5000, "pr-1")
+    invoice = get_invoice(5000, "pr-2")
+    yield invoice["bolt11"]
+
+
+@pytest_asyncio.fixture(scope="session")
+async def pr_refund():
+    invoice = get_invoice(10001, "pr-3")
     yield invoice["bolt11"]
 

@@ -1,6 +1,7 @@
 import json
 import httpx
 import websockets
+import logging
 
 from typing import Optional
 from dataclasses import dataclass
@@ -46,14 +47,15 @@ class MempoolClient:
     async def wait_for_websocket_message(self, send, message_string):
         async for websocket in websockets.connect(self._ws_url):
             try:
-                await websocket.send(json.dumps({"action": "want", "data": ["blocks", "mempool-block"]}))
+                await websocket.send(json.dumps({"action": "want", "data": ["blocks"]}))
                 await websocket.send(json.dumps(send))
                 async for raw in websocket:
+                    # logging.error(raw)
                     message = json.loads(raw)
                     if message_string in message:
                         return message.get(message_string)
             except websockets.ConnectionClosed:
-                continue
+                websocket.close()
 
 
     async def wait_for_tx_confirmed(self, txid: str):
@@ -101,7 +103,7 @@ class MempoolClient:
         txs = self.request(
             "get",
             f"{self._api_url}/api/address/{address}/txs",
-            headers={"Content-Type": "text/plain"},
+            headers={"Content-Type": "application/json"},
         )
         if len(txs) == 0:
             return None
@@ -109,14 +111,14 @@ class MempoolClient:
         for tx in txs:
             for i, vout in enumerate(tx["vout"]):
                 if vout["scriptpubkey_address"] == address:
-                    return LockupData(txid=tx["txid"], vout_cnt=i, vout_amount=vout["value"], status=tx["status"]["confirmed"])
+                    return LockupData(txid=tx["txid"], vout_cnt=i, vout_amount=vout["value"], status="test")
         return None
 
 
-    def send_onchain_tx(self, tx: bytes):
+    def send_onchain_tx(self, tx_hex: str):
         return self.request(
             "post",
             f"{self._api_url}/api/tx",
             headers={"Content-Type": "text/plain"},
-            content=tx,
+            content=tx_hex,
         )

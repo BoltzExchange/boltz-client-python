@@ -1,0 +1,91 @@
+import pytest
+import logging
+import asyncio
+
+from boltz_client.mempool import MempoolBlockHeightException
+from boltz_client.boltz import (
+    BoltzClient,
+    BoltzSwapResponse,
+    BoltzSwapStatusResponse,
+    BoltzSwapStatusException,
+)
+
+from .helpers import pay_onchain, mine_blocks, create_onchain_address
+
+
+@pytest.mark.asyncio
+async def test_create_swap_and_check_status(client, pr):
+    refund_privkey_wif, swap = client.create_swap(pr, 10000)
+    assert type(refund_privkey_wif) == str
+    assert type(swap) == BoltzSwapResponse
+    assert hasattr(swap, "id")
+    assert hasattr(swap, "address")
+    assert hasattr(swap, "expectedAmount")
+
+    # combining those to test save creating an extra swap :)
+    swap_status = client.swap_status(swap.id)
+    assert type(swap_status) == BoltzSwapStatusResponse
+    assert hasattr(swap_status, "status")
+    assert swap_status.status == "invoice.set"
+
+    task = asyncio.create_task(client.mempool.wait_for_address_transactions(swap.address))
+    txid = pay_onchain(swap.address, swap.expectedAmount)
+    await task
+
+    swap_status_after_payment = client.swap_status(swap.id)
+    assert swap_status_after_payment.status == "transaction.mempool"
+
+    task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
+    mine_blocks()
+    await task
+
+    swap_status_after_confirmed = client.swap_status(swap.id)
+    assert swap_status_after_confirmed.status == "transaction.claimed"
+
+
+@pytest.mark.asyncio
+async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
+    refund_privkey_wif, swap = client.create_swap(pr_refund, 10001)
+
+    # pay to less onchain so the swap fails
+    task = asyncio.create_task(client.mempool.wait_for_address_transactions(swap.address))
+    txid = pay_onchain(swap.address, swap.expectedAmount-1000)
+    await task
+
+    task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
+    mine_blocks()
+    await task
+
+
+    with pytest.raises(BoltzSwapStatusException):
+        client.swap_status(swap.id)
+
+    onchain_address = create_onchain_address()
+    refund_kwargs = {
+        "privkey_wif": refund_privkey_wif,
+        "lockup_address": swap.address,
+        "receive_address": onchain_address,
+        "redeem_script_hex": swap.redeemScript,
+        "timeout_block_height": swap.timeoutBlockHeight,
+    }
+
+    # try refund before timeout
+    with pytest.raises(MempoolBlockHeightException):
+        client.refund_swap(**refund_kwargs)
+
+    # wait for timeout
+    blocks_to_mine = swap.timeoutBlockHeight - client.mempool.get_blockheight() + 3
+    mine_blocks(blocks=blocks_to_mine)
+
+    # actually refund
+    txid = client.refund_swap(**refund_kwargs)
+
+    task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
+    mine_blocks()
+    await task
+
+    # check status
+    try:
+        client.swap_status(swap.id)
+    except BoltzSwapStatusException as exc:
+        assert exc.status == "swap.expired"

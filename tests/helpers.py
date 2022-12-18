@@ -31,7 +31,7 @@ def mine_blocks(blocks: int = 1) -> str:
     return run_cmd(f"{docker_bitcoin_cli} -generate {blocks}")
 
 
-def get_address(address_type: str = "bech32") -> str:
+def create_onchain_address(address_type: str = "bech32") -> str:
     return run_cmd(f"{docker_bitcoin_cli} getnewaddress {address_type}")
 
 
