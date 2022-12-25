@@ -34,11 +34,7 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
     p = pay_invoice(swap.invoice)
 
     # check if pay_invoice is done / fails first
-    # outs, _ = p.communicate()
     if p.poll():
-    #     data = json.loads(outs.decode("UTF-8"))
-    #     logging.error(data.get("message"))
-    #     get_lockup_task.cancel()
         assert False
 
     new_address = create_onchain_address()
