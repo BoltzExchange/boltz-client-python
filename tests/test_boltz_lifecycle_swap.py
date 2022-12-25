@@ -51,12 +51,12 @@ async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
 
     # pay to less onchain so the swap fails
     txid = pay_onchain(swap.address, swap.expectedAmount-1000)
+
     await task
 
     task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
     mine_blocks()
     await task
-
 
     with pytest.raises(BoltzSwapStatusException):
         client.swap_status(swap.id)

@@ -1,11 +1,6 @@
 import pytest
 import asyncio
-import logging
-import json
 
-from boltz_client.mempool import (
-    LockupData
-)
 from boltz_client.boltz import (
     BoltzClient,
     BoltzReverseSwapResponse,
@@ -34,13 +29,8 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
     assert hasattr(swap_status, "status")
     assert swap_status.status == "swap.created"
 
-
     # create_task is used because pay_invoice is stuck as long as boltz does not
     # see the onchain claim tx and it ends up in deadlock
-    # done should be the wait_for_lockup_tx task
-    # pending should be the pay_invoice task
-
-    get_lockup_task = asyncio.create_task(client.mempool.wait_for_lockup_tx(swap.lockupAddress))
     p = pay_invoice(swap.invoice)
 
     # check if pay_invoice is done / fails first
@@ -58,6 +48,7 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
         redeem_script_hex=swap.redeemScript,
         privkey_wif=claim_privkey_wif,
         preimage_hex=preimage_hex,
+        zeroconf=True,
     )
 
     task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
