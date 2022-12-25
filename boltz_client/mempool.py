@@ -1,7 +1,9 @@
 import json
 import httpx
+import asyncio
 import websockets
 import logging
+logger = logging.getLogger()
 
 from typing import Optional
 from dataclasses import dataclass
@@ -11,7 +13,6 @@ from .helpers import req_wrap
 
 @dataclass
 class LockupData:
-    status: str
     txid: str
     vout_cnt: int
     vout_amount: int
@@ -44,26 +45,67 @@ class MempoolClient:
             raise MempoolApiException(f"mempool api status error: {msg}")
 
 
-    async def wait_for_websocket_message(self, send, message_string):
-        async for websocket in websockets.connect(self._ws_url):
+    async def wait_for_websocket_message(self, send, message_key):
+        async for websocket in websockets.connect(self._ws_url): #type: ignore
             try:
+                # await websocket.send(json.dumps({"action": "init"}))
+                # await websocket.send(json.dumps({"action": "want", "data": ["blocks", "mempool-blocks"]}))
                 await websocket.send(json.dumps({"action": "want", "data": ["blocks"]}))
                 await websocket.send(json.dumps(send))
                 async for raw in websocket:
-                    # logging.error(raw)
                     message = json.loads(raw)
-                    if message_string in message:
-                        return message.get(message_string)
-            except websockets.ConnectionClosed:
-                websocket.close()
+                    if message_key in message:
+                        return message.get(message_key)
+            except websockets.ConnectionClosed: #type: ignore
+                continue
+
+
+    async def wait_for_one_websocket_message(self, send):
+        async with websockets.connect(self._ws_url) as websocket: #type: ignore
+            await websocket.send(json.dumps({"action": "want", "data": ["blocks", "mempool-blocks"]}))
+            await websocket.send(json.dumps(send))
+            raw = await asyncio.wait_for(websocket.recv(), timeout=10)
+            return json.loads(raw) if raw else None
 
 
     async def wait_for_tx_confirmed(self, txid: str):
         return await self.wait_for_websocket_message({"track-tx": txid }, "txConfirmed")
 
 
-    async def wait_for_address_transactions(self, address: str):
-        return await self.wait_for_websocket_message({"track-address": address }, "address-transactions")
+    async def wait_for_lockup_tx(self, address: str) -> LockupData:
+        message = await self.wait_for_websocket_message({"track-address": address }, "address-transactions")
+        if not message:
+            # restart
+            return await self.wait_for_lockup_tx(address)
+        lockup_tx = self.find_tx_and_output(message, address)
+        if not lockup_tx:
+            # restart
+            return await self.wait_for_lockup_tx(address)
+        return lockup_tx
+
+
+    def find_tx_and_output(self, txs, address: str) -> Optional[LockupData]:
+        if len(txs) == 0:
+            return None
+        for tx in txs:
+            for i, vout in enumerate(tx["vout"]):
+                if vout["scriptpubkey_address"] == address:
+                    return LockupData(txid=tx["txid"], vout_cnt=i, vout_amount=vout["value"])
+        return None
+
+
+    async def get_tx_from_address(self, address: str) -> LockupData:
+        txs = self.request(
+            "get",
+            f"{self._api_url}/api/address/{address}/txs",
+            headers={"Content-Type": "application/json"},
+        )
+        if len(txs) == 0:
+            return await self.wait_for_lockup_tx(address)
+        lockup_tx = self.find_tx_and_output(txs, address)
+        if not lockup_tx:
+            return await self.wait_for_lockup_tx(address)
+        return lockup_tx
 
 
     def get_fee_estimation(self) -> int:
@@ -97,22 +139,6 @@ class MempoolClient:
         if current_block_height < timeout_block_height:
             msg = f"current_block_height ({current_block_height}) has not yet exceeded ({timeout_block_height})"
             raise MempoolBlockHeightException(msg)
-
-
-    def get_tx_from_address(self, address: str) -> Optional[LockupData]:
-        txs = self.request(
-            "get",
-            f"{self._api_url}/api/address/{address}/txs",
-            headers={"Content-Type": "application/json"},
-        )
-        if len(txs) == 0:
-            return None
-
-        for tx in txs:
-            for i, vout in enumerate(tx["vout"]):
-                if vout["scriptpubkey_address"] == address:
-                    return LockupData(txid=tx["txid"], vout_cnt=i, vout_amount=vout["value"], status="test")
-        return None
 
 
     def send_onchain_tx(self, tx_hex: str):

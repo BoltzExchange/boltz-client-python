@@ -15,7 +15,7 @@ from .helpers import pay_onchain, mine_blocks, create_onchain_address
 
 @pytest.mark.asyncio
 async def test_create_swap_and_check_status(client, pr):
-    refund_privkey_wif, swap = client.create_swap(pr, 10000)
+    refund_privkey_wif, swap = client.create_swap(pr)
     assert type(refund_privkey_wif) == str
     assert type(swap) == BoltzSwapResponse
     assert hasattr(swap, "id")
@@ -28,7 +28,7 @@ async def test_create_swap_and_check_status(client, pr):
     assert hasattr(swap_status, "status")
     assert swap_status.status == "invoice.set"
 
-    task = asyncio.create_task(client.mempool.wait_for_address_transactions(swap.address))
+    task = asyncio.create_task(client.mempool.wait_for_lockup_tx(swap.address))
     txid = pay_onchain(swap.address, swap.expectedAmount)
     await task
 
@@ -45,10 +45,11 @@ async def test_create_swap_and_check_status(client, pr):
 
 @pytest.mark.asyncio
 async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
-    refund_privkey_wif, swap = client.create_swap(pr_refund, 10001)
+    refund_privkey_wif, swap = client.create_swap(pr_refund)
+
+    task = asyncio.create_task(client.mempool.wait_for_lockup_tx(swap.address))
 
     # pay to less onchain so the swap fails
-    task = asyncio.create_task(client.mempool.wait_for_address_transactions(swap.address))
     txid = pay_onchain(swap.address, swap.expectedAmount-1000)
     await task
 
@@ -71,14 +72,14 @@ async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
 
     # try refund before timeout
     with pytest.raises(MempoolBlockHeightException):
-        client.refund_swap(**refund_kwargs)
+        await client.refund_swap(**refund_kwargs)
 
     # wait for timeout
     blocks_to_mine = swap.timeoutBlockHeight - client.mempool.get_blockheight() + 3
     mine_blocks(blocks=blocks_to_mine)
 
     # actually refund
-    txid = client.refund_swap(**refund_kwargs)
+    txid = await client.refund_swap(**refund_kwargs)
 
     task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
     mine_blocks()

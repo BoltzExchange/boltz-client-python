@@ -33,7 +33,8 @@ def create_refund_tx(
     lockup_tx: LockupData,
 ) -> tuple[str, str]:
     # encrypt redeemscript to script_sig
-    rs = bytes([34]) + bytes([0]) + bytes([32]) + sha256(unhexlify(redeem_script_hex)).digest()
+    rs = bytes([34]) + bytes([0]) + bytes([32])
+    rs += sha256(unhexlify(redeem_script_hex)).digest()
     script_sig =  script.Script(data=rs)
     return create_onchain_tx(
         sequence=0xFFFFFFFE,
@@ -47,12 +48,14 @@ def create_refund_tx(
 
 
 def create_claim_tx(
+    preimage_hex: str,
     privkey_wif: str,
     receive_address: str,
     redeem_script_hex: str,
     lockup_tx: LockupData
 ) -> tuple[str, str]:
     return create_onchain_tx(
+        preimage_hex=preimage_hex,
         lockup_tx=lockup_tx,
         receive_address=receive_address,
         privkey_wif=privkey_wif,

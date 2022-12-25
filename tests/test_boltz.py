@@ -67,4 +67,4 @@ async def test_swap_status_invalid(client):
 @pytest.mark.asyncio
 async def test_create_swap_invalid_payment_request(client):
     with pytest.raises(BoltzApiException):
-        _ = client.create_swap("lnbrc1000000", 10000)
+        _ = client.create_swap("lnbrc1000000")

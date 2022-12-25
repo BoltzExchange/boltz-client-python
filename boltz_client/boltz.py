@@ -1,13 +1,12 @@
 import httpx
 
-
 import logging as logger
 logger.basicConfig(level=logger.DEBUG, format='%(asctime)s: %(levelname)s - %(message)s')
 
 from typing import Optional
 from dataclasses import dataclass
 
-from .onchain import create_key_pair, create_preimage, create_refund_tx
+from .onchain import create_key_pair, create_preimage, create_refund_tx, create_claim_tx
 from .helpers import req_wrap
 from .mempool import MempoolClient
 
@@ -35,6 +34,7 @@ class BoltzSwapStatusResponse:
     status: str
     failureReason: Optional[str] = None
     zeroConfRejected: Optional[str] = None
+    transaction: Optional[str] = None
 
 
 @dataclass
@@ -51,6 +51,11 @@ class BoltzSwapResponse:
 @dataclass
 class BoltzReverseSwapResponse:
     id: str
+    invoice: str
+    redeemScript: str
+    lockupAddress: str
+    timeoutBlockHeight: int
+    onchainAmount: int
 
 
 @dataclass
@@ -125,16 +130,24 @@ class BoltzClient:
         return status
 
 
-    def claim_reverse_swap(self, lockup_tx_id: str, receive_address: str):
-        pass
+    async def claim_reverse_swap(self, lockup_address: str, receive_address: str, privkey_wif: str, preimage_hex: str, redeem_script_hex: str):
+        lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
+
+        txid, tx = create_claim_tx(
+            lockup_tx=lockup_tx,
+            receive_address=receive_address,
+            privkey_wif=privkey_wif,
+            redeem_script_hex=redeem_script_hex,
+            preimage_hex=preimage_hex,
+        )
+
+        self.mempool.send_onchain_tx(tx)
+        return txid
 
 
-    def refund_swap(self, privkey_wif: str, lockup_address: str, receive_address: str, redeem_script_hex: str, timeout_block_height: int) -> str:
+    async def refund_swap(self, privkey_wif: str, lockup_address: str, receive_address: str, redeem_script_hex: str, timeout_block_height: int) -> str:
         self.mempool.check_block_height(timeout_block_height)
-        lockup_tx = self.mempool.get_tx_from_address(lockup_address)
-        if not lockup_tx:
-            raise BoltzApiException("lockup transaction not found.")
-
+        lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
         txid, tx = create_refund_tx(
             lockup_tx=lockup_tx,
             privkey_wif=privkey_wif,
@@ -147,8 +160,7 @@ class BoltzClient:
         return txid
 
 
-    def create_swap(self, payment_request: str, amount: int = 0) -> tuple[str, BoltzSwapResponse]:
-        self.check_limits(amount)
+    def create_swap(self, payment_request: str) -> tuple[str, BoltzSwapResponse]:
         refund_privkey_wif, refund_pubkey_hex = create_key_pair(self._cfg.network)
         data = self.request(
             "post",
@@ -166,13 +178,10 @@ class BoltzClient:
         return refund_privkey_wif, BoltzSwapResponse(**data)
 
 
-    async def create_reverse_swap(self, amount: int = 0) -> tuple[str, str, BoltzReverseSwapResponse]:
-
+    def create_reverse_swap(self, amount: int = 0) -> tuple[str, str, BoltzReverseSwapResponse]:
         self.check_limits(amount)
-
         claim_privkey_wif, claim_pubkey_hex = create_key_pair(self._cfg.network)
         preimage_hex, preimage_hash = create_preimage()
-
         data = self.request(
             "post",
             f"{self._cfg.api_url}/createswap",
@@ -187,18 +196,5 @@ class BoltzClient:
             },
             headers={"Content-Type": "application/json"},
         )
-
         swap = BoltzReverseSwapResponse(**data)
-
         return claim_privkey_wif, preimage_hex, swap
-
-
-    async def wait_for_reverse_swap_and_claim(self, lockup_address, instant_settlement: bool = True) -> None:
-        lockup_tx = self.mempool.get_tx_from_address(lockup_address)
-        if lockup_tx:
-            if not instant_settlement and lockup_tx.status != "confirmed":
-                await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
-        else:
-            await self.mempool.wait_for_address_transactions(lockup_address)
-
-        # await self.create_claim_tx(lockup_tx)

@@ -2,6 +2,8 @@ import os
 import time
 import json
 
+from subprocess import run, Popen, PIPE
+
 
 docker_bitcoin_rpc = "boltz"
 docker_prefix = "boltz-client"
@@ -15,7 +17,7 @@ docker_bitcoin_cli = f"{docker_bitcoin} bitcoin-cli -rpcuser={docker_bitcoin_rpc
 
 
 def run_cmd(cmd: str) -> str:
-    return os.popen(cmd).read().strip()
+    return run(cmd, shell=True, capture_output=True).stdout.decode("UTF-8").strip()
 
 
 def run_cmd_json(cmd: str) -> dict:
@@ -25,6 +27,10 @@ def run_cmd_json(cmd: str) -> dict:
 def get_invoice(sats: int, prefix: str, description: str = "test") -> dict:
     msats = sats * 1000
     return run_cmd_json(f"{docker_lightning_cli} invoice {msats} {prefix}-{time.time()} {description}")
+
+
+def pay_invoice(invoice: str) -> Popen:
+    return Popen(f"{docker_lightning_cli} pay {invoice}", shell=True, stdin=PIPE, stdout=PIPE)
 
 
 def mine_blocks(blocks: int = 1) -> str:
