@@ -1,6 +1,5 @@
 # boltz.exchange python client
- A boltz.exchange client for python
-
+A boltz.exchange client for python
 
 ## installing
 ```console

@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "boltz_client"
-version = "0.1.0"
+version = "0.0.1"
 description = "python boltz client"
+license = "MIT"
 authors = ["dni <office@dnilabs.com>"]
-long-description-content-type = "text/markdown"
 
 [tool.poetry.dependencies]
 python = "^3.10 | ^3.9"
