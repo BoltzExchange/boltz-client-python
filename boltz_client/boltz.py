@@ -130,8 +130,10 @@ class BoltzClient:
         return status
 
 
-    async def claim_reverse_swap(self, lockup_address: str, receive_address: str, privkey_wif: str, preimage_hex: str, redeem_script_hex: str):
+    async def claim_reverse_swap(self, lockup_address: str, receive_address: str, privkey_wif: str, preimage_hex: str, redeem_script_hex: str, zeroconf: bool = False):
         lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
+        if not zeroconf:
+            await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
 
         txid, tx = create_claim_tx(
             lockup_tx=lockup_tx,
