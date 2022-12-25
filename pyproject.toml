@@ -9,7 +9,7 @@ repository = "https://github.com/dni/boltz-client-python"
 homepage = "https://boltz.exchange"
 
 [tool.poetry.dependencies]
-python = "^3.10 | ^3.9"
+python = "^3.10 | ^3.9 | ^3.8 | ^3.7"
 httpx = "^0.23.1"
 embit = "^0.6.1"
 click = "^8.1.3"
