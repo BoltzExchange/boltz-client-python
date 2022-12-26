@@ -128,8 +128,9 @@ def create_reverse_swap_and_claim(receive_address: str, sats: int, zeroconf: boo
     click.echo(swap.invoice)
     click.echo()
     click.echo("1. waiting until you paid the invoice...")
-    click.echo("2. boltz creates the lockup transaction...")
-    click.echo("3. claiming onchain and waiting for tx confirmation...")
+    click.echo("2. waiting for boltz to create the lockup transaction...")
+    if not zeroconf:
+        click.echo("3. waiting for lockup tx confirmation...")
 
     txid = asyncio.run(client.claim_reverse_swap(
         swap.lockupAddress,
