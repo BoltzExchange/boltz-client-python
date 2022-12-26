@@ -13,6 +13,7 @@ from .helpers import req_wrap
 
 @dataclass
 class LockupData:
+    status: str
     txid: str
     vout_cnt: int
     vout_amount: int
@@ -90,14 +91,15 @@ class MempoolClient:
         for tx in txs:
             for i, vout in enumerate(tx["vout"]):
                 if vout["scriptpubkey_address"] == address:
-                    return LockupData(txid=tx["txid"], vout_cnt=i, vout_amount=vout["value"])
+                    status = "confirmed" if tx["status"]["confirmed"] else "unconfirmed"
+                    return LockupData(txid=tx["txid"], vout_cnt=i, vout_amount=vout["value"], status=status)
         return None
 
 
     async def get_tx_from_address(self, address: str) -> LockupData:
         txs = self.request(
             "get",
-            f"{self._api_url}/api/address/{address}/txs",
+            f"{self._api_url}/address/{address}/txs",
             headers={"Content-Type": "application/json"},
         )
         if len(txs) == 0:
@@ -119,7 +121,7 @@ class MempoolClient:
     def get_fees(self) -> int:
         data = self.request(
             "get",
-            f"{self._api_url}/api/v1/fees/recommended",
+            f"{self._api_url}/v1/fees/recommended",
             headers={"Content-Type": "application/json"},
         )
         return int(data["economyFee"])
@@ -128,7 +130,7 @@ class MempoolClient:
     def get_blockheight(self) -> int:
         data = self.request(
             "get",
-            f"{self._api_url}/api/blocks/tip/height",
+            f"{self._api_url}/blocks/tip/height",
             headers={"Content-Type": "text/plain"},
         )
         return int(data["text"])
@@ -144,7 +146,7 @@ class MempoolClient:
     def send_onchain_tx(self, tx_hex: str):
         return self.request(
             "post",
-            f"{self._api_url}/api/tx",
+            f"{self._api_url}/tx",
             headers={"Content-Type": "text/plain"},
             content=tx_hex,
         )

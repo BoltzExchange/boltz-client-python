@@ -96,6 +96,9 @@ def create_reverse_swap(sats: int):
     click.echo(f"lockup_address: {swap.lockupAddress}")
     click.echo(f"redeem_script_hex: {swap.redeemScript}")
     click.echo()
+    click.echo(f"boltz_id: {swap.id}")
+    click.echo(f"mempool.space url: {config.mempool_url}/address/{swap.lockupAddress}")
+    click.echo()
     click.echo("invoice:")
     click.echo(swap.invoice)
 
@@ -118,11 +121,15 @@ def create_reverse_swap_and_claim(receive_address: str, sats: int, zeroconf: boo
     click.echo(f"lockup_address: {swap.lockupAddress}")
     click.echo(f"redeem_script_hex: {swap.redeemScript}")
     click.echo()
+    click.echo(f"boltz_id: {swap.id}")
+    click.echo(f"mempool.space url: {config.mempool_url}/address/{swap.lockupAddress}")
+    click.echo()
     click.echo("invoice:")
     click.echo(swap.invoice)
     click.echo()
-    click.echo("waiting until you paid the invoice and")
-    click.echo("boltz created the lockup transaction...")
+    click.echo("1. waiting until you paid the invoice...")
+    click.echo("2. boltz creates the lockup transaction...")
+    click.echo("3. claiming onchain and waiting for tx confirmation...")
 
     txid = asyncio.run(client.claim_reverse_swap(
         swap.lockupAddress,
@@ -130,6 +137,7 @@ def create_reverse_swap_and_claim(receive_address: str, sats: int, zeroconf: boo
         claim_privkey_wif,
         preimage_hex,
         swap.redeemScript,
+        zeroconf,
     ))
 
     click.echo(f"reverse swap claimed!")
@@ -142,24 +150,30 @@ def create_reverse_swap_and_claim(receive_address: str, sats: int, zeroconf: boo
 @click.argument('privkey_wif', type=str)
 @click.argument('preimage_hex', type=str)
 @click.argument('redeem_script_hex', type=str)
+@click.argument('zeroconf', type=bool, default=False)
 def claim_reverse_swap(
     lockup_address: str,
     receive_address: str,
     privkey_wif: str,
     preimage_hex: str,
-    redeem_script_hex: str
+    redeem_script_hex: str,
+    zeroconf: bool = False
 ):
     """
     claims a reverse swap
     """
     client = BoltzClient(config)
-    txid = client.claim_reverse_swap(
+
+    txid = asyncio.run(client.claim_reverse_swap(
         lockup_address,
         receive_address,
         privkey_wif,
         preimage_hex,
         redeem_script_hex,
-    )
+        zeroconf,
+    ))
+
+    click.echo(f"reverse swap claimed!")
     click.echo(f"TXID: {txid}")
 
 

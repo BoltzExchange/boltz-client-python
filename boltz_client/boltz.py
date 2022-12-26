@@ -111,7 +111,7 @@ class BoltzClient:
     def check_limits(self, amount: int) -> None:
         valid = amount >= self.limit_minimal and amount <= self.limit_maximal
         if not valid:
-            msg = f"Boltz - swap not in boltz limits, amount: {amount}"
+            msg = f"Boltz - swap not in boltz limits, amount: {amount}, min: {self.limit_minimal}, max: {self.limit_maximal}"
             raise BoltzLimitException(msg)
 
 
@@ -132,7 +132,8 @@ class BoltzClient:
 
     async def claim_reverse_swap(self, lockup_address: str, receive_address: str, privkey_wif: str, preimage_hex: str, redeem_script_hex: str, zeroconf: bool = False):
         lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
-        if not zeroconf:
+
+        if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
 
         txid, tx = create_claim_tx(
