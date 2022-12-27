@@ -12,15 +12,6 @@ sys.tracebacklimit = 0
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
-# testing
-# config = BoltzConfig(
-#     network="regtest",
-#     api_url="http://localhost:9001",
-#     mempool_url="http://localhost:8080",
-#     mempool_ws_url="ws://localhost:8080/api/v1/ws",
-# )
-
 config = BoltzConfig()
 
 
@@ -44,6 +35,7 @@ def create_swap(payment_request):
     client = BoltzClient(config)
     refund_privkey_wif, swap = client.create_swap(payment_request)
 
+    click.echo(f"boltz_id: {swap.id}")
     click.echo()
     click.echo(f"refund privkey in wif: {refund_privkey_wif}")
     click.echo(f"redeem_script_hex: {swap.redeemScript}")
@@ -70,13 +62,14 @@ def refund_swap(
     refund a swap
     """
     client = BoltzClient(config)
-    txid = client.refund_swap(
+    txid = asyncio.run(client.refund_swap(
         privkey_wif,
         lockup_address,
         receive_address,
         redeem_script_hex,
         timeout_block_height,
-    )
+    ))
+    click.echo(f"swap refunded!")
     click.echo(f"TXID: {txid}")
 
 
