@@ -2,7 +2,6 @@ import os
 
 from typing import Optional
 from hashlib import sha256
-from binascii import unhexlify, hexlify
 
 from embit import ec, script
 from embit.networks import NETWORKS
@@ -20,7 +19,7 @@ def create_preimage() -> tuple[str, str]:
 def create_key_pair(network) -> tuple[str, str]:
     net = NETWORKS[network]
     privkey = ec.PrivateKey(os.urandom(32), True, net)
-    pubkey_hex = hexlify(privkey.sec()).decode("UTF-8")
+    pubkey_hex = bytes.hex(privkey.sec())
     privkey_wif = privkey.wif(net)
     return privkey_wif, pubkey_hex
 
@@ -34,7 +33,7 @@ def create_refund_tx(
 ) -> tuple[str, str]:
     # encrypt redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
-    rs += sha256(unhexlify(redeem_script_hex)).digest()
+    rs += sha256(bytes.fromhex(redeem_script_hex)).digest()
     script_sig =  script.Script(data=rs)
     return create_onchain_tx(
         sequence=0xFFFFFFFE,
@@ -75,7 +74,7 @@ def create_onchain_tx(
     script_sig: Optional[script.Script]= None,
 ) -> tuple[str, str]:
 
-    vin = TransactionInput(unhexlify(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence)
+    vin = TransactionInput(bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence)
     vout = TransactionOutput(lockup_tx.vout_amount - fees, script.address_to_scriptpubkey(receive_address))
     tx = Transaction(vin=[vin], vout=[vout])
 
@@ -86,7 +85,7 @@ def create_onchain_tx(
         tx.vin[0].script_sig = script_sig
 
     # hashing redeemscript
-    s = script.Script(data=unhexlify(redeem_script_hex))
+    s = script.Script(data=bytes.fromhex(redeem_script_hex))
     h = tx.sighash_segwit(0, s, lockup_tx.vout_amount)
 
     # sign the redeemscript hash
@@ -94,7 +93,7 @@ def create_onchain_tx(
     sig = privkey.sign(h).serialize() + bytes([SIGHASH.ALL])
 
     # put the witness into the input
-    witness_items = [sig, unhexlify(preimage_hex), unhexlify(redeem_script_hex)]
+    witness_items = [sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex)]
     tx.vin[0].witness = script.Witness(items=witness_items)
 
-    return hexlify(tx.txid()).decode("UTF-8"), hexlify(tx.serialize()).decode("UTF-8")
+    return bytes.hex(tx.txid()), bytes.hex(tx.serialize())

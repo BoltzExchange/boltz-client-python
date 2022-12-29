@@ -1,13 +1,9 @@
 import asyncio
-import json
-import os
-import time
 import pytest_asyncio
 
-from binascii import hexlify
 from embit.transaction import Transaction
 
-from .helpers import get_invoice, mine_blocks
+from .helpers import get_invoice
 
 from boltz_client.boltz import BoltzConfig, BoltzClient
 
@@ -35,14 +31,14 @@ async def client():
 @pytest_asyncio.fixture(scope="session")
 async def raw_tx_invalid():
     tx = Transaction()
-    raw_tx = hexlify(tx.serialize())
+    raw_tx = bytes.hex(tx.serialize())
     yield raw_tx
 
 
 @pytest_asyncio.fixture(scope="session")
 async def raw_tx():
     tx = Transaction()
-    raw_tx = hexlify(tx.serialize())
+    raw_tx = bytes.hex(tx.serialize())
     yield raw_tx
 
 
