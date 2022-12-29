@@ -1,7 +1,6 @@
 import os
-
-from typing import Optional
 from hashlib import sha256
+from typing import Optional
 
 from embit import ec, script
 from embit.networks import NETWORKS
@@ -34,7 +33,7 @@ def create_refund_tx(
     # encrypt redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
     rs += sha256(bytes.fromhex(redeem_script_hex)).digest()
-    script_sig =  script.Script(data=rs)
+    script_sig = script.Script(data=rs)
     return create_onchain_tx(
         sequence=0xFFFFFFFE,
         redeem_script_hex=redeem_script_hex,
@@ -51,7 +50,7 @@ def create_claim_tx(
     privkey_wif: str,
     receive_address: str,
     redeem_script_hex: str,
-    lockup_tx: LockupData
+    lockup_tx: LockupData,
 ) -> tuple[str, str]:
     return create_onchain_tx(
         preimage_hex=preimage_hex,
@@ -71,11 +70,15 @@ def create_onchain_tx(
     sequence: int = 0xFFFFFFFF,
     timeout_block_height: int = 0,
     preimage_hex: str = "",
-    script_sig: Optional[script.Script]= None,
+    script_sig: Optional[script.Script] = None,
 ) -> tuple[str, str]:
 
-    vin = TransactionInput(bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence)
-    vout = TransactionOutput(lockup_tx.vout_amount - fees, script.address_to_scriptpubkey(receive_address))
+    vin = TransactionInput(
+        bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence
+    )
+    vout = TransactionOutput(
+        lockup_tx.vout_amount - fees, script.address_to_scriptpubkey(receive_address)
+    )
     tx = Transaction(vin=[vin], vout=[vout])
 
     if timeout_block_height > 0:

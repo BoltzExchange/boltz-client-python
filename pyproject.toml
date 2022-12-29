@@ -34,6 +34,7 @@ profile = "black"
 
 [tool.mypy]
 ignore_missing_imports = "True"
+files = "boltz_client"
 
 [tool.pytest.ini_options]
 log_cli = true

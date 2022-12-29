@@ -4,11 +4,13 @@ from boltz_client.mempool import MempoolApiException, MempoolBlockHeightExceptio
 from boltz_client.boltz import BoltzClient, BoltzConfig
 
 
-
-
 @pytest.mark.asyncio
 async def test_api_exception():
-    config = BoltzConfig(network="regtest", api_url="http://localhost:9001", mempool_url="http://localhost:8888")
+    config = BoltzConfig(
+        network="regtest",
+        api_url="http://localhost:9001",
+        mempool_url="http://localhost:8888",
+    )
     with pytest.raises(MempoolApiException):
         BoltzClient(config)
 
@@ -56,4 +58,3 @@ async def test_send_invalid_onchain(client, raw_tx_invalid):
 # async def test_send_valid_onchain(client, raw_tx):
 #     sent = client.mempool.send_onchain_tx(raw_tx)
 #     print(sent)
-

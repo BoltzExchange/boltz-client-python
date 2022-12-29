@@ -26,11 +26,15 @@ def run_cmd_json(cmd: str) -> dict:
 
 def get_invoice(sats: int, prefix: str, description: str = "test") -> dict:
     msats = sats * 1000
-    return run_cmd_json(f"{docker_lightning_cli} invoice {msats} {prefix}-{time.time()} {description}")
+    return run_cmd_json(
+        f"{docker_lightning_cli} invoice {msats} {prefix}-{time.time()} {description}"
+    )
 
 
 def pay_invoice(invoice: str) -> Popen:
-    return Popen(f"{docker_lightning_cli} pay {invoice}", shell=True, stdin=PIPE, stdout=PIPE)
+    return Popen(
+        f"{docker_lightning_cli} pay {invoice}", shell=True, stdin=PIPE, stdout=PIPE
+    )
 
 
 def mine_blocks(blocks: int = 1) -> str:

@@ -1,14 +1,17 @@
+import logging as logger
+
 import httpx
 
-import logging as logger
-logger.basicConfig(level=logger.DEBUG, format='%(asctime)s: %(levelname)s - %(message)s')
+logger.basicConfig(
+    level=logger.DEBUG, format="%(asctime)s: %(levelname)s - %(message)s"
+)
 
-from typing import Optional
 from dataclasses import dataclass
+from typing import Optional
 
-from .onchain import create_key_pair, create_preimage, create_refund_tx, create_claim_tx
 from .helpers import req_wrap
 from .mempool import MempoolClient
+from .onchain import create_claim_tx, create_key_pair, create_preimage, create_refund_tx
 
 
 class BoltzLimitException(Exception):
@@ -75,7 +78,6 @@ class BoltzClient:
         self.set_limits()
         self.mempool = MempoolClient(self._cfg.mempool_url, self._cfg.mempool_ws_url)
 
-
     def request(self, funcname, *args, **kwargs) -> dict:
         try:
             return req_wrap(funcname, *args, **kwargs)
@@ -84,10 +86,9 @@ class BoltzClient:
             raise BoltzApiException(f"boltz api connection error: {msg}")
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 404:
-                raise BoltzNotFoundException(exc.response.json()['error'])
+                raise BoltzNotFoundException(exc.response.json()["error"])
             msg = f"{exc.response.status_code} while requesting {exc.request.url!r}. message: {exc.response.json()['error']}"
             raise BoltzApiException(f"boltz api status error: {msg}")
-
 
     def check_version(self):
         return self.request(
@@ -95,7 +96,6 @@ class BoltzClient:
             f"{self._cfg.api_url}/version",
             headers={"Content-Type": "application/json"},
         )
-
 
     def set_limits(self) -> None:
         data = self.request(
@@ -107,13 +107,11 @@ class BoltzClient:
         self.limit_maximal = limits["maximal"]
         self.limit_minimal = limits["minimal"]
 
-
     def check_limits(self, amount: int) -> None:
         valid = amount >= self.limit_minimal and amount <= self.limit_maximal
         if not valid:
             msg = f"Boltz - swap not in boltz limits, amount: {amount}, min: {self.limit_minimal}, max: {self.limit_maximal}"
             raise BoltzLimitException(msg)
-
 
     def swap_status(self, boltz_id: str) -> BoltzSwapStatusResponse:
         data = self.request(
@@ -129,8 +127,15 @@ class BoltzClient:
 
         return status
 
-
-    async def claim_reverse_swap(self, lockup_address: str, receive_address: str, privkey_wif: str, preimage_hex: str, redeem_script_hex: str, zeroconf: bool = False):
+    async def claim_reverse_swap(
+        self,
+        lockup_address: str,
+        receive_address: str,
+        privkey_wif: str,
+        preimage_hex: str,
+        redeem_script_hex: str,
+        zeroconf: bool = False,
+    ):
         lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
 
         if not zeroconf and lockup_tx.status != "confirmed":
@@ -147,8 +152,14 @@ class BoltzClient:
         self.mempool.send_onchain_tx(tx)
         return txid
 
-
-    async def refund_swap(self, privkey_wif: str, lockup_address: str, receive_address: str, redeem_script_hex: str, timeout_block_height: int) -> str:
+    async def refund_swap(
+        self,
+        privkey_wif: str,
+        lockup_address: str,
+        receive_address: str,
+        redeem_script_hex: str,
+        timeout_block_height: int,
+    ) -> str:
         self.mempool.check_block_height(timeout_block_height)
         lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
         txid, tx = create_refund_tx(
@@ -161,7 +172,6 @@ class BoltzClient:
 
         self.mempool.send_onchain_tx(tx)
         return txid
-
 
     def create_swap(self, payment_request: str) -> tuple[str, BoltzSwapResponse]:
         refund_privkey_wif, refund_pubkey_hex = create_key_pair(self._cfg.network)
@@ -180,8 +190,9 @@ class BoltzClient:
         )
         return refund_privkey_wif, BoltzSwapResponse(**data)
 
-
-    def create_reverse_swap(self, amount: int = 0) -> tuple[str, str, BoltzReverseSwapResponse]:
+    def create_reverse_swap(
+        self, amount: int = 0
+    ) -> tuple[str, str, BoltzReverseSwapResponse]:
         self.check_limits(amount)
         claim_privkey_wif, claim_pubkey_hex = create_key_pair(self._cfg.network)
         preimage_hex, preimage_hash = create_preimage()

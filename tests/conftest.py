@@ -58,4 +58,3 @@ async def pr_small():
 async def pr_refund():
     invoice = get_invoice(10001, "pr-3")
     yield invoice["bolt11"]
-

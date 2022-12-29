@@ -50,7 +50,7 @@ async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
     task = asyncio.create_task(client.mempool.wait_for_lockup_tx(swap.address))
 
     # pay to less onchain so the swap fails
-    txid = pay_onchain(swap.address, swap.expectedAmount-1000)
+    txid = pay_onchain(swap.address, swap.expectedAmount - 1000)
 
     await task
 
