@@ -188,14 +188,6 @@ def swap_status(id):
     click.echo(data)
 
 
-@click.command()
-def version():
-    """ shows version of boltz api """
-    client = BoltzClient(config)
-    data = client.check_version()
-    click.echo(data["version"])
-
-
 def main():
     command_group.add_command(swap_status)
     command_group.add_command(create_swap)
@@ -203,7 +195,6 @@ def main():
     command_group.add_command(create_reverse_swap)
     command_group.add_command(create_reverse_swap_and_claim)
     command_group.add_command(claim_reverse_swap)
-    command_group.add_command(version)
     command_group()
 
 
