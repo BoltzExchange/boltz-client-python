@@ -1,5 +1,4 @@
 import pytest
-import logging
 import asyncio
 
 from boltz_client.mempool import MempoolBlockHeightException

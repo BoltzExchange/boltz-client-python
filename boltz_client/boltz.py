@@ -1,10 +1,4 @@
-import logging as logger
-
 import httpx
-
-logger.basicConfig(
-    level=logger.DEBUG, format="%(asctime)s: %(levelname)s - %(message)s"
-)
 
 from dataclasses import dataclass
 from typing import Optional

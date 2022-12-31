@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import sys
 
 import click
@@ -8,10 +7,6 @@ from boltz_client.boltz import BoltzClient, BoltzConfig
 
 # disable tracebacks on exceptions
 sys.tracebacklimit = 0
-
-# better logging for cli
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 config = BoltzConfig()
 

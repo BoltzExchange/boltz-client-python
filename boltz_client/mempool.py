@@ -1,11 +1,8 @@
 import asyncio
 import json
-import logging
 
 import httpx
 import websockets
-
-logger = logging.getLogger()
 
 from dataclasses import dataclass
 from typing import Optional
