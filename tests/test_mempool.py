@@ -1,7 +1,7 @@
 import pytest
 
-from boltz_client.mempool import MempoolApiException, MempoolBlockHeightException
 from boltz_client.boltz import BoltzClient, BoltzConfig
+from boltz_client.mempool import MempoolApiException, MempoolBlockHeightException
 
 
 @pytest.mark.asyncio

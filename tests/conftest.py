@@ -1,11 +1,11 @@
 import asyncio
-import pytest_asyncio
 
+import pytest_asyncio
 from embit.transaction import Transaction
 
-from .helpers import get_invoice
+from boltz_client.boltz import BoltzClient, BoltzConfig
 
-from boltz_client.boltz import BoltzConfig, BoltzClient
+from .helpers import get_invoice
 
 
 @pytest_asyncio.fixture(scope="session")

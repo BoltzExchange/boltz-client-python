@@ -1,9 +1,7 @@
+import json
 import os
 import time
-import json
-
-from subprocess import run, Popen, PIPE
-
+from subprocess import PIPE, Popen, run
 
 docker_bitcoin_rpc = "boltz"
 docker_prefix = "boltz-client"

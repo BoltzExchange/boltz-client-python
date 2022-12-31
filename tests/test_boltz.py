@@ -1,10 +1,9 @@
 import pytest
 
-
 from boltz_client.boltz import (
+    BoltzApiException,
     BoltzClient,
     BoltzConfig,
-    BoltzApiException,
     BoltzLimitException,
     BoltzNotFoundException,
 )

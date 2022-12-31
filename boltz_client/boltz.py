@@ -1,7 +1,7 @@
-import httpx
-
 from dataclasses import dataclass
 from typing import Optional
+
+import httpx
 
 from .helpers import req_wrap
 from .mempool import MempoolClient

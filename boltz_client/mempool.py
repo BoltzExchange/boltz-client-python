@@ -1,11 +1,10 @@
 import asyncio
 import json
+from dataclasses import dataclass
+from typing import Optional
 
 import httpx
 import websockets
-
-from dataclasses import dataclass
-from typing import Optional
 
 from .helpers import req_wrap
 

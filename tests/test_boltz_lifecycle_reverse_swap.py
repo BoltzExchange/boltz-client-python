@@ -1,5 +1,6 @@
-import pytest
 import asyncio
+
+import pytest
 
 from boltz_client.boltz import (
     BoltzClient,
@@ -7,7 +8,7 @@ from boltz_client.boltz import (
     BoltzSwapStatusResponse,
 )
 
-from .helpers import pay_invoice, mine_blocks, create_onchain_address
+from .helpers import create_onchain_address, mine_blocks, pay_invoice
 
 
 @pytest.mark.asyncio
