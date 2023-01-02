@@ -96,12 +96,15 @@ class MempoolClient:
                     )
         return None
 
-    async def get_tx_from_address(self, address: str) -> LockupData:
-        txs = self.request(
+    def get_txs_from_address(self, address: str):
+        return self.request(
             "get",
             f"{self._api_url}/address/{address}/txs",
             headers={"Content-Type": "application/json"},
         )
+
+    async def get_tx_from_address(self, address: str) -> LockupData:
+        txs = self.get_txs_from_address(address)
         if len(txs) == 0:
             return await self.wait_for_lockup_tx(address)
         lockup_tx = self.find_tx_and_output(txs, address)
