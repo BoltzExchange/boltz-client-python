@@ -1,12 +1,16 @@
 [tool.poetry]
 name = "boltz_client"
-version = "0.1.1"
+version = "0.1.2"
 description = "python boltz client"
 license = "MIT"
 authors = ["dni <office@dnilabs.com>"]
 readme = "README.md"
 repository = "https://github.com/dni/boltz-client-python"
 homepage = "https://boltz.exchange"
+packages = [
+  {include = "boltz_client"},
+  {include = "boltz_client/py.typed"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.10 | ^3.9 | ^3.8 | ^3.7"
