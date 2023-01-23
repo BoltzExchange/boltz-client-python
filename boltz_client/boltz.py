@@ -69,6 +69,7 @@ class BoltzClient:
         self._cfg = config
         self.limit_minimal = 0
         self.limit_maximal = 0
+        self.fee_percentage = 0
         self.set_limits()
         self.mempool = MempoolClient(self._cfg.mempool_url, self._cfg.mempool_ws_url)
 
@@ -97,9 +98,12 @@ class BoltzClient:
             f"{self._cfg.api_url}/getpairs",
             headers={"Content-Type": "application/json"},
         )
-        limits = data["pairs"]["BTC/BTC"]["limits"]
+        pair = data["pairs"]["BTC/BTC"]
+        limits = pair["limits"]
+        fees = pair["fees"]
         self.limit_maximal = limits["maximal"]
         self.limit_minimal = limits["minimal"]
+        self.fee_percentage = fees["percentage"]
 
     def check_limits(self, amount: int) -> None:
         valid = amount >= self.limit_minimal and amount <= self.limit_maximal
