@@ -1,3 +1,5 @@
+""" boltz_client main module """
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -78,12 +80,12 @@ class BoltzClient:
             return req_wrap(funcname, *args, **kwargs)
         except httpx.RequestError as exc:
             msg = f"unreachable: {exc.request.url!r}."
-            raise BoltzApiException(f"boltz api connection error: {msg}")
+            raise BoltzApiException(f"boltz api connection error: {msg}") from exc
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code == 404:
-                raise BoltzNotFoundException(exc.response.json()["error"])
+                raise BoltzNotFoundException(exc.response.json()["error"]) from exc
             msg = f"{exc.response.status_code} while requesting {exc.request.url!r}. message: {exc.response.json()['error']}"
-            raise BoltzApiException(f"boltz api status error: {msg}")
+            raise BoltzApiException(f"boltz api status error: {msg}") from exc
 
     def check_version(self):
         return self.request(
@@ -106,7 +108,7 @@ class BoltzClient:
         self.fee_percentage = fees["percentage"]
 
     def check_limits(self, amount: int) -> None:
-        valid = amount >= self.limit_minimal and amount <= self.limit_maximal
+        valid = self.limit_minimal <= amount <= self.limit_maximal
         if not valid:
             msg = f"Boltz - swap not in boltz limits, amount: {amount}, min: {self.limit_minimal}, max: {self.limit_maximal}"
             raise BoltzLimitException(msg)
@@ -139,7 +141,7 @@ class BoltzClient:
         if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
 
-        txid, tx = create_claim_tx(
+        txid, transaction = create_claim_tx(
             lockup_tx=lockup_tx,
             receive_address=receive_address,
             privkey_wif=privkey_wif,
@@ -147,7 +149,7 @@ class BoltzClient:
             preimage_hex=preimage_hex,
         )
 
-        self.mempool.send_onchain_tx(tx)
+        self.mempool.send_onchain_tx(transaction)
         return txid
 
     async def refund_swap(
@@ -160,7 +162,7 @@ class BoltzClient:
     ) -> str:
         self.mempool.check_block_height(timeout_block_height)
         lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
-        txid, tx = create_refund_tx(
+        txid, transaction = create_refund_tx(
             lockup_tx=lockup_tx,
             privkey_wif=privkey_wif,
             receive_address=receive_address,
@@ -168,10 +170,11 @@ class BoltzClient:
             timeout_block_height=timeout_block_height,
         )
 
-        self.mempool.send_onchain_tx(tx)
+        self.mempool.send_onchain_tx(transaction)
         return txid
 
     def create_swap(self, payment_request: str) -> tuple[str, BoltzSwapResponse]:
+        """create swap and return private key and boltz response"""
         refund_privkey_wif, refund_pubkey_hex = create_key_pair(self._cfg.network)
         data = self.request(
             "post",
@@ -191,6 +194,7 @@ class BoltzClient:
     def create_reverse_swap(
         self, amount: int = 0
     ) -> tuple[str, str, BoltzReverseSwapResponse]:
+        """create reverse swap and return privkey, preimage and boltz response"""
         self.check_limits(amount)
         claim_privkey_wif, claim_pubkey_hex = create_key_pair(self._cfg.network)
         preimage_hex, preimage_hash = create_preimage()

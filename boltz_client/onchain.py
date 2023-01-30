@@ -1,3 +1,5 @@
+""" boltz_client onchain module """
+
 import os
 from hashlib import sha256
 from typing import Optional
@@ -88,12 +90,13 @@ def create_onchain_tx(
         tx.vin[0].script_sig = script_sig
 
     # hashing redeemscript
-    s = script.Script(data=bytes.fromhex(redeem_script_hex))
-    h = tx.sighash_segwit(0, s, lockup_tx.vout_amount)
+
+    h = tx.sighash_segwit(
+        0, script.Script(data=bytes.fromhex(redeem_script_hex)), lockup_tx.vout_amount
+    )
 
     # sign the redeemscript hash
-    privkey = ec.PrivateKey.from_wif(privkey_wif)
-    sig = privkey.sign(h).serialize() + bytes([SIGHASH.ALL])
+    sig = ec.PrivateKey.from_wif(privkey_wif).sign(h).serialize() + bytes([SIGHASH.ALL])
 
     # put the witness into the input
     witness_items = [sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex)]

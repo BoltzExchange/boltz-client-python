@@ -1,3 +1,5 @@
+""" boltz_client test helpers """
+
 import json
 import time
 from subprocess import PIPE, Popen, run

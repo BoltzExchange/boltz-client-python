@@ -1,8 +1,12 @@
-name: regtest
-on: [push, pull_request]
+name: pylint
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  boltz:
+  checks:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,14 +23,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-      - name: Setup Regtest
-        run: |
-          cd docker
-          chmod +x ./regtest
-          ./regtest
-      - name: Install dependencies
-        run: |
-          poetry install
-      - name: Run tests
-        run: |
-          poetry run pytest
+      - name: Install packages
+        run: poetry install
+      - name: Check pylint
+        run: poetry run pylint boltz_client

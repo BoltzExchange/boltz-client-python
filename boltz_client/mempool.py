@@ -1,10 +1,13 @@
+""" boltz_client mempool module """
+
 import asyncio
 import json
 from dataclasses import dataclass
 from typing import Optional
 
 import httpx
-import websockets
+from websockets.client import connect
+from websockets.exceptions import ConnectionClosed
 
 from .helpers import req_wrap
 
@@ -37,27 +40,25 @@ class MempoolClient:
             return req_wrap(funcname, *args, **kwargs)
         except httpx.RequestError as exc:
             msg = f"unreachable: {exc.request.url!r}."
-            raise MempoolApiException(f"mempool api connection error: {msg}")
+            raise MempoolApiException(f"mempool api connection error: {msg}") from exc
         except httpx.HTTPStatusError as exc:
             msg = f"{exc.response.status_code} while requesting {exc.request.url!r}. message: {exc.response.text}"
-            raise MempoolApiException(f"mempool api status error: {msg}")
+            raise MempoolApiException(f"mempool api status error: {msg}") from exc
 
     async def wait_for_websocket_message(self, send, message_key):
-        async for websocket in websockets.connect(self._ws_url):  # type: ignore
+        async for websocket in connect(self._ws_url):
             try:
-                # await websocket.send(json.dumps({"action": "init"}))
-                # await websocket.send(json.dumps({"action": "want", "data": ["blocks", "mempool-blocks"]}))
                 await websocket.send(json.dumps({"action": "want", "data": ["blocks"]}))
                 await websocket.send(json.dumps(send))
                 async for raw in websocket:
                     message = json.loads(raw)
                     if message_key in message:
                         return message.get(message_key)
-            except websockets.ConnectionClosed:  # type: ignore
+            except ConnectionClosed:
                 continue
 
     async def wait_for_one_websocket_message(self, send):
-        async with websockets.connect(self._ws_url) as websocket:  # type: ignore
+        async with connect(self._ws_url) as websocket:
             await websocket.send(
                 json.dumps({"action": "want", "data": ["blocks", "mempool-blocks"]})
             )

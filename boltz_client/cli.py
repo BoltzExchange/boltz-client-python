@@ -1,3 +1,5 @@
+""" boltz_client CLI """
+
 import asyncio
 import sys
 
@@ -72,7 +74,7 @@ def refund_swap(
             timeout_block_height,
         )
     )
-    click.echo(f"swap refunded!")
+    click.echo("swap refunded!")
     click.echo(f"TXID: {txid}")
 
 
@@ -143,7 +145,7 @@ def create_reverse_swap_and_claim(
         )
     )
 
-    click.echo(f"reverse swap claimed!")
+    click.echo("reverse swap claimed!")
     click.echo(f"TXID: {txid}")
 
 
@@ -178,13 +180,13 @@ def claim_reverse_swap(
         )
     )
 
-    click.echo(f"reverse swap claimed!")
+    click.echo("reverse swap claimed!")
     click.echo(f"TXID: {txid}")
 
 
 @click.command()
 @click.argument("id", type=str)
-def swap_status(id):
+def swap_status(swap_id):
     """
     get swap status
     retrieves the status of your boltz swap from the api
@@ -192,11 +194,12 @@ def swap_status(id):
     ID is the id of your boltz swap
     """
     client = BoltzClient(config)
-    data = client.swap_status(id)
+    data = client.swap_status(swap_id)
     click.echo(data)
 
 
 def main():
+    """main function"""
     command_group.add_command(swap_status)
     command_group.add_command(create_swap)
     command_group.add_command(refund_swap)
