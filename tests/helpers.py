@@ -6,7 +6,7 @@ from subprocess import PIPE, Popen, run
 
 docker_bitcoin_rpc = "boltz"
 docker_prefix = "boltz-client"
-docker_cmd = f"docker exec"
+docker_cmd = "docker exec"
 
 docker_lightning = f"{docker_cmd} {docker_prefix}-corelightning-1"
 docker_lightning_cli = f"{docker_lightning} lightning-cli --network regtest"

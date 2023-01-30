@@ -13,7 +13,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.10 | ^3.9 | ^3.8"
+python = "^3.10 | ^3.9"
 httpx = ">=0.23"
 embit = ">=0.4"
 click = ">=8"
@@ -26,6 +26,7 @@ pytest = "^7.1.2"
 black = "^22.6.0"
 mypy = "^0.971"
 pylint = "^2.15.10"
+flake8 = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
