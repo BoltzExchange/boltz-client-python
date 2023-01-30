@@ -1,4 +1,4 @@
-name: pylint
+name: flake8
 on:
   push:
     branches: [ main ]
@@ -25,5 +25,5 @@ jobs:
           cache: "poetry"
       - name: Install packages
         run: poetry install
-      - name: Check pylint
+      - name: Check flake8
         run: poetry run flake8
