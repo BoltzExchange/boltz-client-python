@@ -11,6 +11,12 @@ from boltz_client.boltz import BoltzClient, BoltzConfig
 sys.tracebacklimit = 0
 
 config = BoltzConfig()
+config = BoltzConfig(
+    network="regtest",
+    api_url="http://localhost:9001",
+    mempool_url="http://localhost:8090/api",
+    mempool_ws_url="ws://localhost:8090/api/v1/ws",
+)
 
 
 @click.group()
@@ -46,6 +52,12 @@ def create_swap(payment_request):
     click.echo(f"onchain address: {swap.address}")
     click.echo(f"expected amount: {swap.expectedAmount}")
     click.echo(f"bip21 address: {swap.bip21}")
+    click.echo(f"timeout block height: {swap.timeoutBlockHeight}")
+
+    click.echo()
+    click.echo("run this command if you need to refund:")
+    click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
+    click.echo(f"boltz refund-swap {refund_privkey_wif} {swap.address} YOUR_RECEIVEADDRESS {swap.redeemScript} {swap.timeoutBlockHeight}")
 
 
 @click.command()
@@ -101,6 +113,11 @@ def create_reverse_swap(sats: int):
     click.echo()
     click.echo("invoice:")
     click.echo(swap.invoice)
+
+    click.echo()
+    click.echo("run this command after you see the lockup transaction:")
+    click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
+    click.echo(f"boltz claim-reverse-swap {swap.lockupAddress} YOUR_RECEIVEADDRESS {claim_privkey_wif} {preimage_hex} {swap.redeemScript}")
 
 
 @click.command()
@@ -186,7 +203,7 @@ def claim_reverse_swap(
 
 @click.command()
 @click.argument("id", type=str)
-def swap_status(swap_id):
+def swap_status(id):
     """
     get swap status
     retrieves the status of your boltz swap from the api
@@ -194,7 +211,7 @@ def swap_status(swap_id):
     ID is the id of your boltz swap
     """
     client = BoltzClient(config)
-    data = client.swap_status(swap_id)
+    data = client.swap_status(id)
     click.echo(data)
 
 
