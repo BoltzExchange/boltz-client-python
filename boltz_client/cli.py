@@ -12,6 +12,7 @@ sys.tracebacklimit = 0
 
 config = BoltzConfig()
 
+
 @click.group()
 def command_group():
     """
@@ -50,7 +51,10 @@ def create_swap(payment_request):
     click.echo()
     click.echo("run this command if you need to refund:")
     click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
-    click.echo(f"boltz refund-swap {refund_privkey_wif} {swap.address} YOUR_RECEIVEADDRESS {swap.redeemScript} {swap.timeoutBlockHeight}")
+    click.echo(
+        f"boltz refund-swap {refund_privkey_wif} {swap.address} YOUR_RECEIVEADDRESS "
+        f"{swap.redeemScript} {swap.timeoutBlockHeight}"
+    )
 
 
 @click.command()
@@ -110,7 +114,10 @@ def create_reverse_swap(sats: int):
     click.echo()
     click.echo("run this command after you see the lockup transaction:")
     click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
-    click.echo(f"boltz claim-reverse-swap {swap.lockupAddress} YOUR_RECEIVEADDRESS {claim_privkey_wif} {preimage_hex} {swap.redeemScript}")
+    click.echo(
+        f"boltz claim-reverse-swap {swap.lockupAddress} YOUR_RECEIVEADDRESS "
+        f"{claim_privkey_wif} {preimage_hex} {swap.redeemScript}"
+    )
 
 
 @click.command()
@@ -195,8 +202,8 @@ def claim_reverse_swap(
 
 
 @click.command()
-@click.argument("id", type=str)
-def swap_status(id):
+@click.argument("swap_id", type=str)
+def swap_status(swap_id):
     """
     get swap status
     retrieves the status of your boltz swap from the api
@@ -204,7 +211,7 @@ def swap_status(id):
     ID is the id of your boltz swap
     """
     client = BoltzClient(config)
-    data = client.swap_status(id)
+    data = client.swap_status(swap_id)
     click.echo(data)
 
 
