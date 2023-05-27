@@ -17,6 +17,7 @@ __bundle__
 
 coverage.xml
 
+dist
 docker/data/*
 
 !docker/data/electrs
