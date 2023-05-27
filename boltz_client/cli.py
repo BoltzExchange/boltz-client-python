@@ -11,13 +11,6 @@ from boltz_client.boltz import BoltzClient, BoltzConfig
 sys.tracebacklimit = 0
 
 config = BoltzConfig()
-config = BoltzConfig(
-    network="regtest",
-    api_url="http://localhost:9001",
-    mempool_url="http://localhost:8090/api",
-    mempool_ws_url="ws://localhost:8090/api/v1/ws",
-)
-
 
 @click.group()
 def command_group():
