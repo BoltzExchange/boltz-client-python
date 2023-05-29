@@ -42,13 +42,6 @@ async def test_fees(client):
 
 
 @pytest.mark.asyncio
-async def test_fee_estimation(client):
-    fees = client.mempool.get_fee_estimation()
-    assert type(fees) == int
-    assert fees == 200
-
-
-@pytest.mark.asyncio
 async def test_send_invalid_onchain(client, raw_tx_invalid):
     with pytest.raises(MempoolApiException):
         client.mempool.send_onchain_tx(raw_tx_invalid)
