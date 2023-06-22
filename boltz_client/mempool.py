@@ -16,6 +16,7 @@ from .helpers import req_wrap
 class LockupData:
     status: str
     txid: str
+    script_pub_key: str
     vout_cnt: int
     vout_amount: int
 
@@ -100,6 +101,7 @@ class MempoolClient:
                 status = "confirmed" if tx["status"]["confirmed"] else "unconfirmed"
                 return LockupData(
                     txid=tx["txid"],
+                    script_pub_key=vout["scriptpubkey_address"],
                     vout_cnt=i,
                     vout_amount=vout["value"],
                     status=status,

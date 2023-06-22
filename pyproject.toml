@@ -15,7 +15,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10 | ^3.9"
 httpx = ">=0.23"
-embit = ">=0.4"
+embit = "^0.7.0"
 click = ">=8"
 websockets = ">=10"
 

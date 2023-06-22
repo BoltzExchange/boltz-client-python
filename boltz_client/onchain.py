@@ -1,15 +1,21 @@
 """ boltz_client onchain module """
-
 import os
 from hashlib import sha256
 from typing import Optional
 
 from embit import ec, script
 from embit.base import EmbitError
+from embit.liquid.addresses import addr_decode
+from embit.liquid.networks import NETWORKS as LNETWORKS
+from embit.liquid.pset import PSET
+from embit.liquid.transaction import LTransaction, LTransactionInput, LTransactionOutput
 from embit.networks import NETWORKS
+from embit.psbt import PSBT
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
 from .mempool import LockupData
+
+LASSET = "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
 
 
 def get_txid(tx_hex: str) -> str:
@@ -35,8 +41,12 @@ def create_preimage() -> tuple[str, str]:
     return preimage.hex(), preimage_hash
 
 
-def create_key_pair(network) -> tuple[str, str]:
-    net = NETWORKS[network]
+def create_key_pair(network, pair) -> tuple[str, str]:
+    if pair == "L-BTC/BTC":
+        net = LNETWORKS[network]
+    else:
+        net = NETWORKS[network]
+
     privkey = ec.PrivateKey(os.urandom(32), True, net)
     pubkey_hex = bytes.hex(privkey.sec())
     privkey_wif = privkey.wif(net)
@@ -49,8 +59,9 @@ def create_refund_tx(
     redeem_script_hex: str,
     timeout_block_height: int,
     lockup_tx: LockupData,
+    pair: str,
     fees: int,
-) -> tuple[str, str]:
+) -> tuple[str, str, str]:
     # encrypt redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
     rs += sha256(bytes.fromhex(redeem_script_hex)).digest()
@@ -63,6 +74,7 @@ def create_refund_tx(
         receive_address=receive_address,
         timeout_block_height=timeout_block_height,
         script_sig=script_sig,
+        pair=pair,
         fees=fees,
     )
 
@@ -74,7 +86,9 @@ def create_claim_tx(
     redeem_script_hex: str,
     lockup_tx: LockupData,
     fees: int,
-) -> tuple[str, str]:
+    pair: str,
+    blinding_key: Optional[str] = None,
+) -> tuple[str, str, str]:
     return create_onchain_tx(
         preimage_hex=preimage_hex,
         lockup_tx=lockup_tx,
@@ -82,6 +96,8 @@ def create_claim_tx(
         privkey_wif=privkey_wif,
         redeem_script_hex=redeem_script_hex,
         fees=fees,
+        pair=pair,
+        blinding_key=blinding_key,
     )
 
 
@@ -91,34 +107,66 @@ def create_onchain_tx(
     privkey_wif: str,
     redeem_script_hex: str,
     fees: int,
+    pair: str,
     sequence: int = 0xFFFFFFFF,
     timeout_block_height: int = 0,
     preimage_hex: str = "",
     script_sig: Optional[script.Script] = None,
-) -> tuple[str, str]:
+    blinding_key: Optional[str] = None,
+) -> tuple[str, str, str]:
 
-    vin = TransactionInput(
-        bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence, script_sig=script_sig
-    )
-    vout = TransactionOutput(
-        lockup_tx.vout_amount - fees, script.address_to_scriptpubkey(receive_address)
-    )
-    tx = Transaction(vin=[vin], vout=[vout])
+    TxInput = LTransactionInput if pair == "L-BTC/BTC" else TransactionInput
+    Tx = LTransaction if pair == "L-BTC/BTC" else Transaction
+    Partial = PSET if pair == "L-BTC/BTC" else PSBT
 
+    if pair == "L-BTC/BTC":
+        _, pubkey = addr_decode(receive_address)
+        vout = LTransactionOutput(
+            asset=LASSET,
+            value=lockup_tx.vout_amount - fees,
+            script_pubkey=script.address_to_scriptpubkey(receive_address),
+            ecdh_pubkey=pubkey,
+        )
+        witness_utxo = LTransactionOutput(
+            asset=LASSET,
+            value=lockup_tx.vout_amount,
+            script_pubkey=script.address_to_scriptpubkey(lockup_tx.script_pub_key),
+            ecdh_pubkey=pubkey,
+        )
+    else:
+        vout = TransactionOutput(
+            lockup_tx.vout_amount - fees,
+            script.address_to_scriptpubkey(receive_address),
+        )
+        witness_utxo = TransactionOutput(
+            lockup_tx.vout_amount,
+            script.address_to_scriptpubkey(lockup_tx.script_pub_key),
+        )
+
+    vin = TxInput(bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence)
+    tx = Tx(vin=[vin], vout=[vout])
     if timeout_block_height > 0:
         tx.locktime = timeout_block_height
 
-    # hashing redeemscript
-
-    h = tx.sighash_segwit(
-        0, script.Script(data=bytes.fromhex(redeem_script_hex)), lockup_tx.vout_amount
+    redeem_script = script.Script(data=bytes.fromhex(redeem_script_hex))
+    h = tx.sighash_segwit(0, redeem_script, lockup_tx.vout_amount)
+    sig = ec.PrivateKey.from_wif(privkey_wif).sign(h).serialize() + bytes([SIGHASH.ALL])
+    witness_script = script.Witness(
+        items=[sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex)]
     )
 
-    # sign the redeemscript hash
-    sig = ec.PrivateKey.from_wif(privkey_wif).sign(h).serialize() + bytes([SIGHASH.ALL])
+    psbt = Partial(tx=tx)
+    psbt.inputs[0].witness_utxo = witness_utxo
+    psbt.inputs[0].final_scriptwitness = witness_script
+    if type(psbt) == PSET:
+        rnd = os.urandom(32)
+        psbt.blind(rnd)
 
-    # put the witness into the input
-    witness_items = [sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex)]
-    tx.vin[0].witness = script.Witness(items=witness_items)
+    # finalize
+    ttx = Tx.parse(psbt.tx.serialize())
+    ttx.vin[0].witness = witness_script
 
-    return bytes.hex(tx.txid()), bytes.hex(tx.serialize())
+    if script_sig:
+        ttx.vin[0].redeem_script = script_sig
+
+    return bytes.hex(ttx.txid()), bytes.hex(ttx.serialize()), psbt.to_string()
