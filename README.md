@@ -1,5 +1,5 @@
 # Boltz Python Client
-A Boltz Client in Python, used by e.g. https://github.com/lnbits/boltz
+Boltz Reference Client in Python, used by e.g. https://github.com/lnbits/boltz
 
 ## installing
 ```console
