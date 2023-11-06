@@ -7,12 +7,7 @@ from typing import Optional
 from embit import ec, script
 from embit.base import EmbitError
 from embit.networks import NETWORKS
-from embit.transaction import (
-    SIGHASH,
-    Transaction,
-    TransactionInput,
-    TransactionOutput,
-)
+from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
 from .mempool import LockupData
 
