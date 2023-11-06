@@ -31,15 +31,15 @@ class BoltzSwapStatusException(Exception):
 
 
 class BoltzSwapTransactionException(Exception):
-    def __init__(self, message: str, status: str):
+    def __init__(self, message: str):
         self.message = message
-        self.status = status
 
 
 @dataclass
 class BoltzSwapTransactionResponse:
     transactionHex: Optional[str] = None
     timeoutBlockHeight: Optional[str] = None
+    failureReason: Optional[str] = None
 
 
 @dataclass
@@ -158,10 +158,9 @@ class BoltzClient:
             headers={"Content-Type": "application/json"},
         )
         res = BoltzSwapTransactionResponse(**data)
-        print(res)
 
-        # if res.failureReason:
-        #     raise BoltzSwapTransctionException(res.failureReason, res.status)
+        if res.failureReason:
+            raise BoltzSwapTransactionException(res.failureReason)
 
         return res
 
