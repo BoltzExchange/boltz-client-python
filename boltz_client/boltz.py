@@ -1,5 +1,6 @@
 """ boltz_client main module """
 
+import asyncio
 from dataclasses import dataclass
 from typing import Optional
 
@@ -7,7 +8,14 @@ import httpx
 
 from .helpers import req_wrap
 from .mempool import MempoolClient
-from .onchain import create_claim_tx, create_key_pair, create_preimage, create_refund_tx
+from .onchain import (
+    create_claim_tx,
+    create_key_pair,
+    create_preimage,
+    create_refund_tx,
+    get_txid,
+    validate_address,
+)
 
 
 class BoltzLimitException(Exception):
@@ -15,6 +23,10 @@ class BoltzLimitException(Exception):
 
 
 class BoltzApiException(Exception):
+    pass
+
+
+class BoltzAddressValidationException(Exception):
     pass
 
 
@@ -28,12 +40,24 @@ class BoltzSwapStatusException(Exception):
         self.status = status
 
 
+class BoltzSwapTransactionException(Exception):
+    def __init__(self, message: str):
+        self.message = message
+
+
+@dataclass
+class BoltzSwapTransactionResponse:
+    transactionHex: Optional[str] = None
+    timeoutBlockHeight: Optional[str] = None
+    failureReason: Optional[str] = None
+
+
 @dataclass
 class BoltzSwapStatusResponse:
     status: str
     failureReason: Optional[str] = None
     zeroConfRejected: Optional[str] = None
-    transaction: Optional[str] = None
+    transaction: Optional[dict] = None
 
 
 @dataclass
@@ -61,7 +85,7 @@ class BoltzReverseSwapResponse:
 class BoltzConfig:
     network: str = "main"
     api_url: str = "https://boltz.exchange/api"
-    mempool_url: str = "https://mempool.space/api"
+    mempool_url: str = "https://mempool.space/api/v1"
     mempool_ws_url: str = "wss://mempool.space/api/v1/ws"
     referral_id: str = "dni"
 
@@ -95,8 +119,8 @@ class BoltzClient:
         )
 
     def get_fee_estimation(self, feerate: Optional[int]) -> int:
-        # TODO: hardcoded maximum tx size, in the future we try to get the size of the tx via embit
-        # we need a function like Transaction.vsize()
+        # TODO: hardcoded maximum tx size, in the future we try to get the size of the
+        # tx via embit we need a function like Transaction.vsize()
         tx_size_vbyte = 200
         mempool_fees = feerate if feerate else self.mempool.get_fees()
         return mempool_fees * tx_size_vbyte
@@ -117,8 +141,10 @@ class BoltzClient:
     def check_limits(self, amount: int) -> None:
         valid = self.limit_minimal <= amount <= self.limit_maximal
         if not valid:
-            msg = f"Boltz - swap not in boltz limits, amount: {amount}, min: {self.limit_minimal}, max: {self.limit_maximal}"
-            raise BoltzLimitException(msg)
+            raise BoltzLimitException(
+                f"Boltz - swap not in boltz limits, amount: {amount}, "
+                f"min: {self.limit_minimal}, max: {self.limit_maximal}"
+            )
 
     def swap_status(self, boltz_id: str) -> BoltzSwapStatusResponse:
         data = self.request(
@@ -134,8 +160,50 @@ class BoltzClient:
 
         return status
 
+    def swap_transaction(self, boltz_id: str) -> BoltzSwapTransactionResponse:
+        data = self.request(
+            "post",
+            f"{self._cfg.api_url}/getswaptransaction",
+            json={"id": boltz_id},
+            headers={"Content-Type": "application/json"},
+        )
+        res = BoltzSwapTransactionResponse(**data)
+
+        if res.failureReason:
+            raise BoltzSwapTransactionException(res.failureReason)
+
+        return res
+
+    async def wait_for_txid(self, boltz_id: str) -> str:
+        while True:
+            try:
+                swap_transaction = self.swap_transaction(boltz_id)
+                if swap_transaction.transactionHex:
+                    return get_txid(swap_transaction.transactionHex)
+                raise ValueError("transactionHex is empty")
+            except (ValueError, BoltzApiException, BoltzSwapTransactionException):
+                await asyncio.sleep(5)
+
+    async def wait_for_txid_on_status(self, boltz_id: str) -> str:
+        while True:
+            try:
+                status = self.swap_status(boltz_id)
+                assert status.transaction
+                txid = status.transaction.get("id")
+                assert txid
+                return txid
+            except (BoltzApiException, BoltzSwapStatusException, AssertionError):
+                await asyncio.sleep(5)
+
+    def validate_address(self, address: str):
+        try:
+            validate_address(address, self._cfg.network)
+        except ValueError as exc:
+            raise BoltzAddressValidationException(exc) from exc
+
     async def claim_reverse_swap(
         self,
+        boltz_id: str,
         lockup_address: str,
         receive_address: str,
         privkey_wif: str,
@@ -144,11 +212,11 @@ class BoltzClient:
         zeroconf: bool = False,
         feerate: Optional[int] = None,
     ):
-        lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
-
+        self.validate_address(receive_address)
+        lockup_txid = await self.wait_for_txid_on_status(boltz_id)
+        lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
         if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
-
         txid, transaction = create_claim_tx(
             lockup_tx=lockup_tx,
             receive_address=receive_address,
@@ -157,12 +225,12 @@ class BoltzClient:
             preimage_hex=preimage_hex,
             fees=self.get_fee_estimation(feerate),
         )
-
         self.mempool.send_onchain_tx(transaction)
         return txid
 
     async def refund_swap(
         self,
+        boltz_id: str,
         privkey_wif: str,
         lockup_address: str,
         receive_address: str,
@@ -170,8 +238,10 @@ class BoltzClient:
         timeout_block_height: int,
         feerate: Optional[int] = None,
     ) -> str:
+        self.validate_address(receive_address)
         self.mempool.check_block_height(timeout_block_height)
-        lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
+        lockup_txid = await self.wait_for_txid(boltz_id)
+        lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
         txid, transaction = create_refund_tx(
             lockup_tx=lockup_tx,
             privkey_wif=privkey_wif,

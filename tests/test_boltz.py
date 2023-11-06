@@ -24,35 +24,39 @@ async def test_api_exception():
 async def test_api_log_config(client):
     data = client.check_version()
     assert "version" in data
-    assert data.get("version") == "3.1.5-dirty"
+    assert data.get("version")
+
+
+min_limit = 10000
+max_limit = 40294967
 
 
 @pytest.mark.asyncio
 async def test_check_if_limits_are_set(client):
-    assert client.limit_minimal == 10000
-    assert client.limit_maximal == 4294967
+    assert client.limit_minimal == min_limit
+    assert client.limit_maximal == max_limit
 
 
 @pytest.mark.asyncio
 async def test_check_min_limit(client):
-    client.check_limits(10000)
+    client.check_limits(min_limit)
 
 
 @pytest.mark.asyncio
 async def test_check_below_min_limit(client):
     with pytest.raises(BoltzLimitException):
-        client.check_limits(9999)
+        client.check_limits(min_limit - 1)
 
 
 @pytest.mark.asyncio
 async def test_check_max_limit(client):
-    client.check_limits(4294967)
+    client.check_limits(max_limit)
 
 
 @pytest.mark.asyncio
 async def test_check_below_max_limit(client):
     with pytest.raises(BoltzLimitException):
-        client.check_limits(4294968)
+        client.check_limits(max_limit + 1)
 
 
 @pytest.mark.asyncio

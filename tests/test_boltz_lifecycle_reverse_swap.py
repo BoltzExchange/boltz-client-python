@@ -40,6 +40,7 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
 
     new_address = create_onchain_address()
     txid = await client.claim_reverse_swap(
+        boltz_id=swap.id,
         receive_address=new_address,
         lockup_address=swap.lockupAddress,
         redeem_script_hex=swap.redeemScript,
