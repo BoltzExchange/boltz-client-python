@@ -26,8 +26,10 @@ async def test_api_log_config(client):
     assert "version" in data
     assert data.get("version")
 
+
 min_limit = 10000
 max_limit = 40294967
+
 
 @pytest.mark.asyncio
 async def test_check_if_limits_are_set(client):
