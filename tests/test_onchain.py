@@ -25,6 +25,7 @@ async def test_invalid_address(addr, network):
     [
         ("bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq", "main"),
         ("bcrt1qky0es27zfejlr3grpfl4pj47w7yfm0atwqdf3y", "regtest"),
+        ("bcrt1pataahlktd49l33ee62k62exl7rwuhefgyyzpx8axecgxq36upxcshjsssq", "regtest"),
     ],
 )
 async def test_valid_address(addr, network):
