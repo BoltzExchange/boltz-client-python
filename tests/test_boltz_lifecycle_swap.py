@@ -62,24 +62,31 @@ async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
         client.swap_status(swap.id)
 
     onchain_address = create_onchain_address()
-    refund_kwargs = {
-        "privkey_wif": refund_privkey_wif,
-        "lockup_address": swap.address,
-        "receive_address": onchain_address,
-        "redeem_script_hex": swap.redeemScript,
-        "timeout_block_height": swap.timeoutBlockHeight,
-    }
 
     # try refund before timeout
     with pytest.raises(MempoolBlockHeightException):
-        await client.refund_swap(**refund_kwargs)
+        await client.refund_swap(
+            boltz_id=swap.id,
+            privkey_wif=refund_privkey_wif,
+            lockup_address=swap.address,
+            receive_address=onchain_address,
+            redeem_script_hex=swap.redeemScript,
+            timeout_block_height=swap.timeoutBlockHeight,
+        )
 
     # wait for timeout
     blocks_to_mine = swap.timeoutBlockHeight - client.mempool.get_blockheight() + 3
     mine_blocks(blocks=blocks_to_mine)
 
     # actually refund
-    txid = await client.refund_swap(**refund_kwargs)
+    txid = await client.refund_swap(
+        boltz_id=swap.id,
+        privkey_wif=refund_privkey_wif,
+        lockup_address=swap.address,
+        receive_address=onchain_address,
+        redeem_script_hex=swap.redeemScript,
+        timeout_block_height=swap.timeoutBlockHeight,
+    )
 
     task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
     mine_blocks()

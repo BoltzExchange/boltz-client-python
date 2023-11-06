@@ -20,6 +20,7 @@ config = BoltzConfig()
 #     mempool_ws_url="ws://localhost:8999/api/v1/ws",
 # )
 
+
 @click.group()
 def command_group():
     """
@@ -43,9 +44,7 @@ def create_swap(payment_request):
     click.echo()
     click.echo(f"boltz_id: {swap.id}")
     click.echo()
-    click.echo(
-        f"mempool.space url: {config.mempool_url}/address/{swap.address}"
-    )
+    click.echo(f"mempool.space url: {config.mempool_url}/address/{swap.address}")
     click.echo()
     click.echo(f"refund privkey in wif: {refund_privkey_wif}")
     click.echo(f"redeem_script_hex: {swap.redeemScript}")
@@ -114,9 +113,7 @@ def create_reverse_swap(sats: int):
     click.echo(f"redeem_script_hex: {swap.redeemScript}")
     click.echo()
     click.echo(f"boltz_id: {swap.id}")
-    click.echo(
-        f"mempool.space url: {config.mempool_url}/address/{swap.lockupAddress}"
-    )
+    click.echo(f"mempool.space url: {config.mempool_url}/address/{swap.lockupAddress}")
     click.echo()
     click.echo("invoice:")
     click.echo(swap.invoice)

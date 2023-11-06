@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import httpx
-from embit.transaction import Transaction
+from embit.transaction import Transaction, TransactionError
 
 from .helpers import req_wrap
 from .mempool import MempoolClient
@@ -170,7 +170,7 @@ class BoltzClient:
                 tx_hex = self.swap_transaction(boltz_id)
                 tx = Transaction.from_string(tx_hex.transactionHex)
                 return tx.txid().hex()
-            except Exception:
+            except (BoltzApiException, BoltzSwapTransactionException, TransactionError):
                 await asyncio.sleep(5)
 
     async def wait_for_txid_on_status(self, boltz_id: str) -> str:
@@ -178,10 +178,10 @@ class BoltzClient:
             try:
                 status = self.swap_status(boltz_id)
                 assert status.transaction
-                id = status.transaction.get('id')
-                assert id
-                return id
-            except Exception:
+                txid = status.transaction.get("id")
+                assert txid
+                return txid
+            except (BoltzApiException, BoltzSwapStatusException, AssertionError):
                 await asyncio.sleep(5)
 
     async def claim_reverse_swap(
