@@ -21,8 +21,8 @@ def get_txid(tx_hex: str) -> str:
     try:
         tx = Transaction.from_string(tx_hex)
         return tx.txid().hex()
-    except EmbitError:
-        raise ValueError("Invalid transaction hex")
+    except EmbitError as exc:
+        raise ValueError("Invalid transaction hex") from exc
 
 
 def validate_address(address: str, network: str):
@@ -30,8 +30,8 @@ def validate_address(address: str, network: str):
         addr = script.Script.from_address(address) or script.Script()
         if addr.address(NETWORKS[network]) != address:
             raise ValueError("Invalid network")
-    except EmbitError as e:
-        raise ValueError(f"Invalid address: {e}")
+    except EmbitError as exc:
+        raise ValueError(f"Invalid address: {exc}") from exc
 
 
 def create_preimage() -> tuple[str, str]:
