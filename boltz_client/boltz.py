@@ -2,8 +2,8 @@
 
 import asyncio
 from dataclasses import dataclass
-from typing import Optional
 from math import ceil, floor
+from typing import Optional
 
 import httpx
 
@@ -142,7 +142,6 @@ class BoltzClient:
         mempool_fees = feerate if feerate else self.mempool.get_fees()
         return mempool_fees * tx_size_vbyte
 
-
     def setup_boltz_config(self) -> None:
         data = self.request(
             "get",
@@ -240,7 +239,9 @@ class BoltzClient:
             privkey_wif=privkey_wif,
             redeem_script_hex=redeem_script_hex,
             preimage_hex=preimage_hex,
-            fees=self.get_fee_estimation(feerate) if feerate else self.get_fee_estimation_claim(),
+            fees=self.get_fee_estimation(feerate)
+            if feerate
+            else self.get_fee_estimation_claim(),
         )
         self.mempool.send_onchain_tx(transaction)
         return txid
@@ -265,7 +266,9 @@ class BoltzClient:
             receive_address=receive_address,
             redeem_script_hex=redeem_script_hex,
             timeout_block_height=timeout_block_height,
-            fees=self.get_fee_estimation(feerate) if feerate else self.get_fee_estimation_refund(),
+            fees=self.get_fee_estimation(feerate)
+            if feerate
+            else self.get_fee_estimation_refund(),
         )
         self.mempool.send_onchain_tx(transaction)
         return txid
