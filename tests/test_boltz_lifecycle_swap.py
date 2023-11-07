@@ -10,7 +10,16 @@ from boltz_client.boltz import (
 )
 from boltz_client.mempool import MempoolBlockHeightException
 
-from .helpers import create_onchain_address, mine_blocks, pay_onchain
+from .helpers import create_onchain_address, mine_blocks, pay_onchain, get_invoice
+
+
+@pytest.mark.asyncio
+async def test_create_swap_direction(client):
+    amount = 110000
+    swap_amount = client.substract_swap_fees(amount)
+    invoice = get_invoice(swap_amount, "direction-test")
+    _, swap = client.create_swap(invoice["bolt11"])
+    assert swap.expectedAmount == amount
 
 
 @pytest.mark.asyncio
