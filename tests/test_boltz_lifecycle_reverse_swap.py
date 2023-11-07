@@ -10,6 +10,7 @@ from boltz_client.boltz import (
 
 from .helpers import create_onchain_address, mine_blocks, pay_invoice
 
+
 @pytest.mark.asyncio
 async def test_create_reverse_swap_and_claim(client: BoltzClient):
     claim_privkey_wif, preimage_hex, swap = client.create_reverse_swap(10000)
