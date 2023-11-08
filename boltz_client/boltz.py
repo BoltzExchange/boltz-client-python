@@ -238,7 +238,7 @@ class BoltzClient:
 
     def validate_address(self, address: str):
         try:
-            validate_address(address, self._cfg.network)
+            validate_address(address, self._cfg.network, self.pair)
         except ValueError as exc:
             raise BoltzAddressValidationException(exc) from exc
 

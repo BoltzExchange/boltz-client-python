@@ -26,10 +26,14 @@ def get_txid(tx_hex: str) -> str:
         raise ValueError("Invalid transaction hex") from exc
 
 
-def validate_address(address: str, network: str):
+def validate_address(address: str, network: str, pair: str):
+    if pair == "L-BTC/BTC":
+        net = LNETWORKS[network]
+    else:
+        net = NETWORKS[network]
     try:
         addr = script.Script.from_address(address) or script.Script()
-        if addr.address(NETWORKS[network]) != address:
+        if addr.address(net) != address:
             raise ValueError("Invalid network")
     except EmbitError as exc:
         raise ValueError(f"Invalid address: {exc}") from exc

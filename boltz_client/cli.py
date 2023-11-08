@@ -162,7 +162,6 @@ def create_reverse_swap(sats: int, pair: str = "BTC/BTC", direction: str = "send
 @click.command()
 @click.argument("receive_address", type=str)
 @click.argument("sats", type=int)
-@click.argument("zeroconf", type=bool, default=False)
 @click.argument("pair", type=str, default="BTC/BTC")
 @click.argument("zeroconf", type=bool, default=True)
 @click.argument("direction", type=str, default="send")
