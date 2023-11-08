@@ -117,9 +117,8 @@ class BoltzClient:
             )
         self.pair = pair
         self.pairs = self.get_pairs()
-        print(self.pairs)
         self.fees = self.pairs[self.pair]["fees"]
-        print(self.fees)
+        self.limits = self.pairs[self.pair]["limits"]
 
         if self.pair == "L-BTC/BTC":
             self.network = self._cfg.network_liquid
@@ -184,7 +183,7 @@ class BoltzClient:
         return data["pairs"]
 
     def check_limits(self, amount: int) -> None:
-        limits = self.pairs[self.pair]["limits"]
+        limits = self.limits
         valid = limits["minimal"] <= amount <= limits["maximal"]
         if not valid:
             raise BoltzLimitException(

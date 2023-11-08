@@ -33,8 +33,8 @@ max_limit = 40294967
 
 @pytest.mark.asyncio
 async def test_check_if_limits_are_set(client):
-    assert client.limit_minimal == min_limit
-    assert client.limit_maximal == max_limit
+    assert client.limits["minimal"] == min_limit
+    assert client.limits["maximal"] == max_limit
 
 
 @pytest.mark.asyncio
