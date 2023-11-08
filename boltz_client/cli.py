@@ -73,7 +73,7 @@ def create_swap(payment_request: str, pair: str = "BTC/BTC"):
     click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
     click.echo(
         f"boltz refund-swap {swap.id} {refund_privkey_wif} {swap.address} YOUR_RECEIVEADDRESS "
-        f"{swap.redeemScript} {swap.timeoutBlockHeight}"
+        f"{swap.redeemScript} {swap.timeoutBlockHeight} {swap.blindingKey}"
     )
 
 
@@ -85,6 +85,7 @@ def create_swap(payment_request: str, pair: str = "BTC/BTC"):
 @click.argument("redeem_script_hex", type=str)
 @click.argument("timeout_block_height", type=int)
 @click.argument("pair", type=str, default="BTC/BTC")
+@click.argument("blinding_key", type=str, default=None)
 def refund_swap(
     boltz_id: str,
     privkey_wif: str,
@@ -93,6 +94,7 @@ def refund_swap(
     redeem_script_hex: str,
     timeout_block_height: int,
     pair: str = "BTC/BTC",
+    blinding_key: Optional[str] = None,
 ):
     """
     refund a swap
@@ -106,6 +108,7 @@ def refund_swap(
             receive_address=receive_address,
             redeem_script_hex=redeem_script_hex,
             timeout_block_height=timeout_block_height,
+            blinding_key=blinding_key,
         )
     )
     click.echo("swap refunded!")

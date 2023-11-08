@@ -11,7 +11,7 @@ from embit.liquid.pset import PSET
 from embit.liquid.transaction import LTransaction, LTransactionInput, LTransactionOutput
 from embit.networks import NETWORKS
 from embit.psbt import PSBT
-from embit.liquid.finalizer import finalize_psbt
+# from embit.liquid.finalizer import finalize_psbt
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
 from .mempool import LockupData
@@ -66,6 +66,7 @@ def create_refund_tx(
     lockup_tx: LockupData,
     pair: str,
     fees: int,
+    blinding_key: Optional[str] = None,
 ) -> tuple[str, str, str]:
     # encrypt redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
@@ -81,6 +82,7 @@ def create_refund_tx(
         script_sig=script_sig,
         pair=pair,
         fees=fees,
+        blinding_key=blinding_key,
     )
 
 

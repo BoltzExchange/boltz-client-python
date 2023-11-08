@@ -302,6 +302,7 @@ class BoltzClient:
         redeem_script_hex: str,
         timeout_block_height: int,
         feerate: Optional[int] = None,
+        blinding_key: Optional[str] = None,
     ) -> str:
         self.validate_address(receive_address)
         self.mempool.check_block_height(timeout_block_height)
@@ -315,6 +316,7 @@ class BoltzClient:
             redeem_script_hex=redeem_script_hex,
             timeout_block_height=timeout_block_height,
             pair=self.pair,
+            blinding_key=blinding_key,
             fees=self.get_fee_estimation(feerate)
             if feerate
             else self.get_fee_estimation_refund(),
