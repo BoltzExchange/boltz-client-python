@@ -54,6 +54,7 @@ run "cln channel[0].our_amount_msat" $balance_size_msat $(lightning-cli-sim list
 
 run "boltz service status" "200" $(curl -s -o /dev/null --head -w "%{http_code}" "http://localhost:9001/version")
 run "mempool service status" "200" $(curl -s -o /dev/null --head -w "%{http_code}" "http://localhost:8999/api/v1/blocks/tip/height")
+run "mempool_liquid service status" "200" $(curl -s -o /dev/null --head -w "%{http_code}" "http://localhost:8998/api/v1/blocks/tip/height")
 
 # return non-zero exit code if a test fails
 if [[ "$failed" == "true" ]]; then

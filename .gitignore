@@ -27,3 +27,7 @@ docker/data/electrs/*
 !docker/data/boltz
 docker/data/boltz/*
 !docker/data/boltz/boltz.conf
+
+!docker/data/elements
+docker/data/elements/*
+!docker/data/elements/elements.conf

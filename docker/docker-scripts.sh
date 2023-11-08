@@ -9,6 +9,10 @@ lightning-cli-sim() {
   docker exec $COMPOSE_PROJECT_NAME-corelightning-1 lightning-cli --network regtest $@
 }
 
+elements-cli-sim() {
+  docker exec $COMPOSE_PROJECT_NAME-elementsd-1 elements-cli "$@"
+}
+
 lncli-sim() {
   docker exec $COMPOSE_PROJECT_NAME-lnd-1 lncli --network regtest --rpcserver=lnd:10009 $@
 }
@@ -45,7 +49,7 @@ regtest-start-log(){
 regtest-stop(){
   docker compose down --volumes
   # clean up lightning node data
-  sudo rm -rf ./data/corelightning ./data/lnd ./data/boltz/boltz.db
+  sudo rm -rf ./data/corelightning ./data/lnd ./data/boltz/boltz.db ./data/elements/liquidregtest
   # recreate lightning node data folders preventing permission errors
   mkdir ./data/corelightning ./data/lnd
 }
@@ -62,8 +66,16 @@ bitcoin-init(){
   bitcoin-cli-sim -generate 150 > /dev/null
 }
 
+elements-init(){
+  elements-cli-sim createwallet regtest || elements-cli-sim loadwallet regtest true
+  echo "mining 150 liquid blocks..."
+  elements-cli-sim -generate 150 > /dev/null
+  elements-cli-sim rescanblockchain 0 > /dev/null
+}
+
 regtest-init(){
   bitcoin-init
+  elements-init
   lightning-sync
   lightning-init
 }
