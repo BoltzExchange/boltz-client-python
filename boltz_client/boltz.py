@@ -1,7 +1,7 @@
 """ boltz_client main module """
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from math import ceil, floor
 from typing import Optional
@@ -98,7 +98,7 @@ class BoltzReverseSwapResponse:
 @dataclass
 class BoltzConfig:
     network: str = "main"
-    pairs: list = ["BTC/BTC", "L-BTC/BTC"]
+    pairs: list = field(default_factory=lambda: ["BTC/BTC", "L-BTC/BTC"])
     api_url: str = "https://boltz.exchange/api"
     mempool_url: str = "https://mempool.space/api/v1"
     mempool_ws_url: str = "wss://mempool.space/api/v1/ws"

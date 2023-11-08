@@ -17,6 +17,7 @@ config = BoltzConfig()
 
 # use for manual testing
 config = BoltzConfig(
+    pairs=["BTC/BTC", "L-BTC/BTC"],
     network="regtest",
     api_url="http://localhost:9001",
     mempool_url="http://localhost:8999/api/v1",
