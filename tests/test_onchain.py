@@ -16,7 +16,7 @@ from boltz_client.onchain import validate_address
 )
 async def test_invalid_address(addr, network):
     with pytest.raises(ValueError):
-        validate_address(addr, network)
+        validate_address(addr, network, "BTC/BTC")
 
 
 @pytest.mark.asyncio
@@ -29,4 +29,4 @@ async def test_invalid_address(addr, network):
     ],
 )
 async def test_valid_address(addr, network):
-    validate_address(addr, network)
+    validate_address(addr, network, "BTC/BTC")

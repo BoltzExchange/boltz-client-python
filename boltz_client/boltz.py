@@ -98,6 +98,7 @@ class BoltzReverseSwapResponse:
 @dataclass
 class BoltzConfig:
     network: str = "main"
+    network_liquid: str = "liquidv1"
     pairs: list = field(default_factory=lambda: ["BTC/BTC", "L-BTC/BTC"])
     api_url: str = "https://boltz.exchange/api"
     mempool_url: str = "https://mempool.space/api/v1"
@@ -112,19 +113,23 @@ class BoltzClient:
         self._cfg = config
         if pair not in self._cfg.pairs:
             raise BoltzPairException(
-                f"invalid pair {pair}, possible pairs: {','.join(self._cfg.pairs)}"
+                f"invalid pair {pair}, possible pairs: {', '.join(self._cfg.pairs)}"
             )
         self.pair = pair
         self.pairs = self.get_pairs()
-        self.init_mempool()
+        print(self.pairs)
+        self.fees = self.pairs[self.pair]["fees"]
+        print(self.fees)
 
-    def init_mempool(self):
         if self.pair == "L-BTC/BTC":
+            self.network = self._cfg.network_liquid
             mempool_url = self._cfg.mempool_liquid_url
             mempool_ws_url = self._cfg.mempool_liquid_ws_url
         else:
+            self.network = self._cfg.network
             mempool_url = self._cfg.mempool_url
             mempool_ws_url = self._cfg.mempool_ws_url
+
         self.mempool = MempoolClient(mempool_url, mempool_ws_url)
 
     def request(self, funcname, *args, **kwargs) -> dict:
@@ -147,21 +152,21 @@ class BoltzClient:
         )
 
     def add_reverse_swap_fees(self, amount: int) -> int:
-        rev = self.pairs[self.pair].fees["minerFees"]["baseAsset"]["reverse"]
+        rev = self.fees["minerFees"]["baseAsset"]["reverse"]
         fee = rev["claim"] + rev["lockup"]
-        percent = self.pairs[self.pair].fees["percentage"]
+        percent = self.fees["percentage"]
         return ceil((amount + fee) / (1 - (percent / 100)))
 
     def substract_swap_fees(self, amount: int) -> int:
-        fee = self.pairs[self.pair].fees["minerFees"]["baseAsset"]["normal"]
-        percent = self.pairs[self.pair].fees["percentageSwapIn"]
+        fee = self.fees["minerFees"]["baseAsset"]["normal"]
+        percent = self.fees["percentageSwapIn"]
         return floor((amount - fee) / (1 + (percent / 100)))
 
     def get_fee_estimation_claim(self) -> int:
-        return self.pairs[self.pair].fees["minerFees"]["baseAsset"]["reverse"]["claim"]
+        return self.fees["minerFees"]["baseAsset"]["reverse"]["claim"]
 
     def get_fee_estimation_refund(self) -> int:
-        return self.pairs[self.pair].fees["minerFees"]["baseAsset"]["normal"]
+        return self.fees["minerFees"]["baseAsset"]["normal"]
 
     def get_fee_estimation(self, feerate: Optional[int]) -> int:
         # TODO: hardcoded maximum tx size, in the future we try to get the size of the
@@ -238,7 +243,7 @@ class BoltzClient:
 
     def validate_address(self, address: str):
         try:
-            validate_address(address, self._cfg.network, self.pair)
+            validate_address(address, self.network, self.pair)
         except ValueError as exc:
             raise BoltzAddressValidationException(exc) from exc
 
@@ -255,14 +260,17 @@ class BoltzClient:
         blinding_key: Optional[str] = None,
     ):
 
-        self.validate_address(receive_address)
-
         if self.pair == "L-BTC/BTC":
             unconfidential_lockup_address = to_unconfidential(lockup_address)
             if not unconfidential_lockup_address:
                 raise BoltzApiException("can not unconfidentialize lockup address")
-            lockup_address = to_unconfidential(lockup_address) or ""
-            print(lockup_address)
+            lockup_address = unconfidential_lockup_address
+            unconfidential_receive_address = to_unconfidential(receive_address)
+            if not unconfidential_receive_address:
+                raise BoltzApiException("can not unconfidentialize receive address")
+            receive_address = unconfidential_receive_address
+
+        self.validate_address(receive_address)
 
         lockup_txid = await self.wait_for_txid_on_status(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
@@ -318,7 +326,7 @@ class BoltzClient:
     def create_swap(self, payment_request: str) -> tuple[str, BoltzSwapResponse]:
         """create swap and return private key and boltz response"""
         refund_privkey_wif, refund_pubkey_hex = create_key_pair(
-            self._cfg.network, self.pair
+            self.network, self.pair
         )
         data = self.request(
             "post",
@@ -341,7 +349,7 @@ class BoltzClient:
         """create reverse swap and return privkey, preimage and boltz response"""
         self.check_limits(amount)
         claim_privkey_wif, claim_pubkey_hex = create_key_pair(
-            self._cfg.network, self.pair
+            self.network, self.pair
         )
         preimage_hex, preimage_hash = create_preimage()
         data = self.request(

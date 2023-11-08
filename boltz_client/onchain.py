@@ -11,11 +11,12 @@ from embit.liquid.pset import PSET
 from embit.liquid.transaction import LTransaction, LTransactionInput, LTransactionOutput
 from embit.networks import NETWORKS
 from embit.psbt import PSBT
+from embit.liquid.finalizer import finalize_psbt
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
 from .mempool import LockupData
 
-LASSET = "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
+LASSET = bytes.fromhex("5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225")
 
 
 def get_txid(tx_hex: str) -> str:
@@ -124,6 +125,11 @@ def create_onchain_tx(
     Partial = PSET if pair == "L-BTC/BTC" else PSBT
 
     if pair == "L-BTC/BTC":
+        if not blinding_key:
+            raise ValueError("Blinding key is required for L-BTC/BTC pair")
+        lockup_transaction = LTransaction.from_string(lockup_tx.tx)
+        value, *_ = lockup_transaction.vout[lockup_tx.vout_cnt].unblind(bytes.fromhex(blinding_key))
+        lockup_tx.vout_amount = value
         _, pubkey = addr_decode(receive_address)
         vout = LTransactionOutput(
             asset=LASSET,
@@ -165,6 +171,8 @@ def create_onchain_tx(
     if type(psbt) == PSET:
         rnd = os.urandom(32)
         psbt.blind(rnd)
+
+    # finalize_psbt(psbt)
 
     # finalize
     ttx = Tx.parse(psbt.tx.serialize())
