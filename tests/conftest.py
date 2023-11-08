@@ -7,6 +7,16 @@ from boltz_client.boltz import BoltzClient, BoltzConfig
 
 from .helpers import get_invoice
 
+config = BoltzConfig(
+    network="regtest",
+    network_liquid="liquidregtest",
+    api_url="http://localhost:9001",
+    mempool_url="http://localhost:8999/api/v1",
+    mempool_ws_url="ws://localhost:8999/api/v1/ws",
+    mempool_liquid_url="http://localhost:8998/api/v1",
+    mempool_liquid_ws_url="ws://localhost:8998/api/v1/ws",
+)
+
 
 @pytest_asyncio.fixture(scope="session")
 def event_loop():
@@ -18,15 +28,13 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def client():
-    config = BoltzConfig(
-        network="regtest",
-        api_url="http://localhost:9001",
-        mempool_url="http://localhost:8999/api/v1",
-        mempool_ws_url="ws://localhost:8999/api/v1/ws",
-        mempool_liquid_url="http://localhost:8998/api/v1",
-        mempool_liquid_ws_url="ws://localhost:8998/api/v1/ws",
-    )
     client = BoltzClient(config)
+    yield client
+
+
+@pytest_asyncio.fixture(scope="session")
+async def client_liquid():
+    client = BoltzClient(config, pair="L-BTC/BTC")
     yield client
 
 
