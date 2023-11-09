@@ -155,7 +155,7 @@ def create_onchain_tx(
             script.address_to_scriptpubkey(lockup_tx.script_pub_key),
         )
 
-    vin = TxInput(bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence)
+    vin = TxInput(bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence, script_sig=script_sig)
     tx = Tx(vin=[vin], vout=[vout])
     if timeout_block_height > 0:
         tx.locktime = timeout_block_height
@@ -179,8 +179,7 @@ def create_onchain_tx(
     # finalize
     ttx = Tx.parse(psbt.tx.serialize())
     ttx.vin[0].witness = witness_script
-
     if script_sig:
-        ttx.vin[0].redeem_script = script_sig
+        ttx.vin[0].script_sig = script_sig
 
     return bytes.hex(ttx.txid()), bytes.hex(ttx.serialize()), psbt.to_string()
