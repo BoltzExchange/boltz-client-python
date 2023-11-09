@@ -98,7 +98,7 @@ def create_onchain_tx(
 ) -> tuple[str, str]:
 
     vin = TransactionInput(
-        bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence
+        bytes.fromhex(lockup_tx.txid), lockup_tx.vout_cnt, sequence=sequence, script_sig=script_sig
     )
     vout = TransactionOutput(
         lockup_tx.vout_amount - fees, script.address_to_scriptpubkey(receive_address)
@@ -107,9 +107,6 @@ def create_onchain_tx(
 
     if timeout_block_height > 0:
         tx.locktime = timeout_block_height
-
-    if script_sig:
-        tx.vin[0].script_sig = script_sig
 
     # hashing redeemscript
 
