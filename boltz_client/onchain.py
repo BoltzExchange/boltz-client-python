@@ -145,15 +145,18 @@ def create_onchain_tx(
             bytes.fromhex(blinding_key)
         )
         lockup_tx.vout_amount = value
-        # pubkey = script.address_to_scriptpubkey(receive_address)
         vout = LTransactionOutput(
             asset=LASSET,
-            # value=lockup_tx.vout_amount - fees,
-            value=int(lockup_tx.vout_amount - fees),
+            value=int(lockup_tx.vout_amount),
             script_pubkey=script.address_to_scriptpubkey(
                 to_unconfidential(receive_address)
             ),
             ecdh_pubkey=pubkey.sec(),
+        )
+        vout_fees = LTransactionOutput(
+            asset=LASSET,
+            value=int(fees),
+            script_pubkey=script.Script(),
         )
         witness_utxo = LTransactionOutput(
             asset=LASSET,
@@ -161,6 +164,7 @@ def create_onchain_tx(
             script_pubkey=script.address_to_scriptpubkey(lockup_tx.script_pub_key),
             ecdh_pubkey=pubkey.sec(),
         )
+        vout = [vout, vout_fees]
     else:
         vout = TransactionOutput(
             lockup_tx.vout_amount - fees,
@@ -170,6 +174,7 @@ def create_onchain_tx(
             lockup_tx.vout_amount,
             script.address_to_scriptpubkey(lockup_tx.script_pub_key),
         )
+        vout = [vout]
 
     vin = TxInput(
         bytes.fromhex(lockup_tx.txid),
@@ -177,7 +182,7 @@ def create_onchain_tx(
         sequence=sequence,
         script_sig=script_sig,
     )
-    tx = Tx(vin=[vin], vout=[vout])
+    tx = Tx(vin=[vin], vout=vout)
     if timeout_block_height > 0:
         tx.locktime = timeout_block_height
 
