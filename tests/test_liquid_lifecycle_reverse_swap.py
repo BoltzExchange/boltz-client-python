@@ -4,6 +4,7 @@ import pytest
 from boltz_client.boltz import BoltzClient
 from .helpers import create_onchain_address, mine_blocks, pay_invoice
 
+
 @pytest.mark.asyncio
 async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
     claim_privkey_wif, preimage_hex, swap = client_liquid.create_reverse_swap(10000)

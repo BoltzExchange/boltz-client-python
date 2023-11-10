@@ -3,12 +3,10 @@ import pytest
 
 from boltz_client.boltz import (
     BoltzClient,
-    BoltzSwapResponse,
     BoltzSwapStatusException,
-    BoltzSwapStatusResponse,
 )
 from boltz_client.mempool import MempoolBlockHeightException
-from .helpers import create_onchain_address, mine_blocks, pay_onchain, get_invoice
+from .helpers import create_onchain_address, mine_blocks, pay_onchain
 
 
 @pytest.mark.asyncio
