@@ -148,7 +148,8 @@ def create_onchain_tx(
         # pubkey = script.address_to_scriptpubkey(receive_address)
         vout = LTransactionOutput(
             asset=LASSET,
-            value=lockup_tx.vout_amount - fees,
+            # value=lockup_tx.vout_amount - fees,
+            value=int(lockup_tx.vout_amount - fees),
             script_pubkey=script.address_to_scriptpubkey(
                 to_unconfidential(receive_address)
             ),
@@ -156,7 +157,7 @@ def create_onchain_tx(
         )
         witness_utxo = LTransactionOutput(
             asset=LASSET,
-            value=lockup_tx.vout_amount,
+            value=int(lockup_tx.vout_amount),
             script_pubkey=script.address_to_scriptpubkey(lockup_tx.script_pub_key),
             ecdh_pubkey=pubkey.sec(),
         )
@@ -183,21 +184,10 @@ def create_onchain_tx(
     redeem_script = script.Script(data=bytes.fromhex(redeem_script_hex))
     h = tx.sighash_segwit(0, redeem_script, lockup_tx.vout_amount)
     sig = ec.PrivateKey.from_wif(privkey_wif).sign(h).serialize() + bytes([SIGHASH.ALL])
+    witness_script = script.Witness( items=[ sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex) ])
 
     if pair == "L-BTC/BTC":
-        witness_script = TxInWitness(
-            script_witness=script.Witness(
-                items=[
-                    sig,
-                    bytes.fromhex(preimage_hex),
-                    bytes.fromhex(redeem_script_hex),
-                ]
-            )
-        )
-    else:
-        witness_script = script.Witness(
-            items=[sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex)]
-        )
+        witness_script = TxInWitness(script_witness=witness_script)
 
     psbt = Partial(tx=tx)
     psbt.inputs[0].witness_utxo = witness_utxo

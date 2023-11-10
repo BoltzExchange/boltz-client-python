@@ -226,18 +226,20 @@ class BoltzClient:
                 if swap_transaction.transactionHex:
                     return get_txid(swap_transaction.transactionHex, self.pair)
                 raise ValueError("transactionHex is empty")
-            except (ValueError, BoltzApiException, BoltzSwapTransactionException):
+            except (ValueError, BoltzApiException, BoltzSwapTransactionException) as exc:
+                print(exc)
                 await asyncio.sleep(3)
 
     async def wait_for_txid_on_status(self, boltz_id: str) -> str:
         while True:
             try:
                 status = self.swap_status(boltz_id)
+                print(status)
                 assert status.transaction
                 txid = status.transaction.get("id")
                 assert txid
                 return txid
-            except (BoltzApiException, BoltzSwapStatusException, AssertionError):
+            except (BoltzApiException, BoltzSwapStatusException, AssertionError) as exc:
                 await asyncio.sleep(3)
 
     def validate_address(self, address: str):
@@ -268,10 +270,10 @@ class BoltzClient:
             if not unconfidential_receive_address:
                 raise BoltzApiException("can not unconfidentialize receive address")
             self.validate_address(unconfidential_receive_address)
-            self.validate_address(unconfidential_lockup_address)
         else:
-            self.validate_address(lockup_address)
             self.validate_address(receive_address)
+
+        self.validate_address(lockup_address)
 
         lockup_txid = await self.wait_for_txid_on_status(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
@@ -306,6 +308,8 @@ class BoltzClient:
         feerate: Optional[int] = None,
         blinding_key: Optional[str] = None,
     ) -> str:
+        self.mempool.check_block_height(timeout_block_height)
+
         if self.pair == "L-BTC/BTC":
             unconfidential_lockup_address = to_unconfidential(lockup_address)
             if not unconfidential_lockup_address:
@@ -315,11 +319,11 @@ class BoltzClient:
             if not unconfidential_receive_address:
                 raise BoltzApiException("can not unconfidentialize receive address")
             self.validate_address(unconfidential_receive_address)
-            self.validate_address(unconfidential_lockup_address)
         else:
-            self.validate_address(lockup_address)
             self.validate_address(receive_address)
-        self.mempool.check_block_height(timeout_block_height)
+
+        self.validate_address(lockup_address)
+
         lockup_txid = await self.wait_for_txid(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
         # lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
