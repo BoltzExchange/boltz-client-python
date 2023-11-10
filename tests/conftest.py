@@ -8,8 +8,9 @@ from boltz_client.boltz import BoltzClient, BoltzConfig
 from .helpers import get_invoice
 
 config = BoltzConfig(
+    pairs=["BTC/BTC", "L-BTC/BTC"],
     network="regtest",
-    network_liquid="regtest",
+    network_liquid="elementsregtest",
     api_url="http://localhost:9001",
     mempool_url="http://localhost:8999/api/v1",
     mempool_ws_url="ws://localhost:8999/api/v1/ws",

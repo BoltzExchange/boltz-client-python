@@ -43,7 +43,7 @@ ignore_missing_imports = "True"
 files = "boltz_client"
 
 [tool.pytest.ini_options]
-log_level = "INFO"
+log_level = "DEBUG"
 testpaths = [
   "tests"
 ]
@@ -57,5 +57,7 @@ disable = [
   "invalid-name",
   "too-many-arguments",
   "missing-function-docstring",
-  "missing-class-docstring"
+  "missing-class-docstring",
+  "too-many-instance-attributes",
+  "too-many-locals"
 ]

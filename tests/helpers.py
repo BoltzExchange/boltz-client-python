@@ -14,6 +14,9 @@ docker_lightning_cli = f"{docker_lightning} lightning-cli --network regtest"
 docker_bitcoin = f"{docker_cmd} {docker_prefix}-bitcoind-1"
 docker_bitcoin_cli = f"{docker_bitcoin} bitcoin-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc} -regtest"
 
+docker_elements = f"{docker_cmd} {docker_prefix}-elementsd-1"
+docker_elements_cli = f"{docker_elements} elements-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc}"
+
 
 def run_cmd(cmd: str) -> str:
     return run(cmd, shell=True, capture_output=True).stdout.decode("UTF-8").strip()
@@ -36,14 +39,23 @@ def pay_invoice(invoice: str) -> Popen:
     )
 
 
-def mine_blocks(blocks: int = 1) -> str:
-    return run_cmd(f"{docker_bitcoin_cli} -generate {blocks}")
+def mine_blocks(pair: str = "BTC/BTC", blocks: int = 1) -> str:
+    if pair == "L-BTC/BTC":
+        return run_cmd(f"{docker_elements_cli} -generate {blocks}")
+    else:
+        return run_cmd(f"{docker_bitcoin_cli} -generate {blocks}")
 
 
-def create_onchain_address(address_type: str = "bech32") -> str:
-    return run_cmd(f"{docker_bitcoin_cli} getnewaddress {address_type}")
+def create_onchain_address(pair: str = "BTC/BTC", address_type: str = "bech32") -> str:
+    if pair == "L-BTC/BTC":
+        return run_cmd(f"{docker_elements_cli} getnewaddress {address_type}")
+    else:
+        return run_cmd(f"{docker_bitcoin_cli} getnewaddress {address_type}")
 
 
-def pay_onchain(address: str, sats: int) -> str:
+def pay_onchain(address: str, sats: int, pair: str = "BTC/BTC") -> str:
     btc = sats * 0.00000001
-    return run_cmd(f"{docker_bitcoin_cli} sendtoaddress {address} {btc}")
+    if pair == "L-BTC/BTC":
+        return run_cmd(f"{docker_elements_cli} sendtoaddress {address} {btc}")
+    else:
+        return run_cmd(f"{docker_bitcoin_cli} sendtoaddress {address} {btc}")

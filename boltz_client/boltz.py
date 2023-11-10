@@ -224,10 +224,10 @@ class BoltzClient:
             try:
                 swap_transaction = self.swap_transaction(boltz_id)
                 if swap_transaction.transactionHex:
-                    return get_txid(swap_transaction.transactionHex)
+                    return get_txid(swap_transaction.transactionHex, self.pair)
                 raise ValueError("transactionHex is empty")
             except (ValueError, BoltzApiException, BoltzSwapTransactionException):
-                await asyncio.sleep(5)
+                await asyncio.sleep(3)
 
     async def wait_for_txid_on_status(self, boltz_id: str) -> str:
         while True:
@@ -238,7 +238,7 @@ class BoltzClient:
                 assert txid
                 return txid
             except (BoltzApiException, BoltzSwapStatusException, AssertionError):
-                await asyncio.sleep(5)
+                await asyncio.sleep(3)
 
     def validate_address(self, address: str):
         try:
@@ -267,9 +267,11 @@ class BoltzClient:
             unconfidential_receive_address = to_unconfidential(receive_address)
             if not unconfidential_receive_address:
                 raise BoltzApiException("can not unconfidentialize receive address")
-            receive_address = unconfidential_receive_address
-
-        self.validate_address(receive_address)
+            self.validate_address(unconfidential_receive_address)
+            self.validate_address(unconfidential_lockup_address)
+        else:
+            self.validate_address(lockup_address)
+            self.validate_address(receive_address)
 
         lockup_txid = await self.wait_for_txid_on_status(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
@@ -304,7 +306,19 @@ class BoltzClient:
         feerate: Optional[int] = None,
         blinding_key: Optional[str] = None,
     ) -> str:
-        self.validate_address(receive_address)
+        if self.pair == "L-BTC/BTC":
+            unconfidential_lockup_address = to_unconfidential(lockup_address)
+            if not unconfidential_lockup_address:
+                raise BoltzApiException("can not unconfidentialize lockup address")
+            lockup_address = unconfidential_lockup_address
+            unconfidential_receive_address = to_unconfidential(receive_address)
+            if not unconfidential_receive_address:
+                raise BoltzApiException("can not unconfidentialize receive address")
+            self.validate_address(unconfidential_receive_address)
+            self.validate_address(unconfidential_lockup_address)
+        else:
+            self.validate_address(lockup_address)
+            self.validate_address(receive_address)
         self.mempool.check_block_height(timeout_block_height)
         lockup_txid = await self.wait_for_txid(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
@@ -326,9 +340,7 @@ class BoltzClient:
 
     def create_swap(self, payment_request: str) -> tuple[str, BoltzSwapResponse]:
         """create swap and return private key and boltz response"""
-        refund_privkey_wif, refund_pubkey_hex = create_key_pair(
-            self.network, self.pair
-        )
+        refund_privkey_wif, refund_pubkey_hex = create_key_pair(self.network, self.pair)
         data = self.request(
             "post",
             f"{self._cfg.api_url}/createswap",
@@ -349,9 +361,7 @@ class BoltzClient:
     ) -> tuple[str, str, BoltzReverseSwapResponse]:
         """create reverse swap and return privkey, preimage and boltz response"""
         self.check_limits(amount)
-        claim_privkey_wif, claim_pubkey_hex = create_key_pair(
-            self.network, self.pair
-        )
+        claim_privkey_wif, claim_pubkey_hex = create_key_pair(self.network, self.pair)
         preimage_hex, preimage_hash = create_preimage()
         data = self.request(
             "post",
