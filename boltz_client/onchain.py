@@ -5,6 +5,7 @@ from typing import Optional
 
 from embit import ec, script
 from embit.base import EmbitError
+from embit.liquid.finalizer import finalize_psbt
 from embit.liquid.addresses import addr_decode, to_unconfidential
 from embit.liquid.networks import NETWORKS as LNETWORKS
 from embit.liquid.pset import PSET
@@ -22,7 +23,8 @@ from .mempool import LockupData
 
 LASSET = bytes.fromhex(
     "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
-)
+)[::-1]
+
 
 
 def get_txid(tx_hex: str, pair: str = "BTC/BTC") -> str:
@@ -147,7 +149,7 @@ def create_onchain_tx(
         lockup_tx.vout_amount = value
         vout = LTransactionOutput(
             asset=LASSET,
-            value=int(lockup_tx.vout_amount),
+            value=int(lockup_tx.vout_amount-fees),
             script_pubkey=script.address_to_scriptpubkey(
                 to_unconfidential(receive_address)
             ),
@@ -202,12 +204,12 @@ def create_onchain_tx(
         psbt.outputs[0].blinding_pubkey = pubkey.sec()  # type: ignore
         rnd = os.urandom(32)
         psbt.blind(rnd)
-
-    print("psbt")
-    print(bytes.hex(psbt.serialize()))
+        psbt_tx = psbt.blinded_tx.serialize()
+    else:
+        psbt_tx = psbt.tx.serialize()
 
     # finalize
-    ttx = Tx.parse(psbt.tx.serialize())
+    ttx = Tx.parse(psbt_tx)
     ttx.vin[0].witness = witness_script
     if script_sig:
         ttx.vin[0].script_sig = script_sig
