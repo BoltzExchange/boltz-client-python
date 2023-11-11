@@ -21,9 +21,7 @@ from embit.transaction import SIGHASH, Transaction, TransactionInput, Transactio
 
 from .mempool import LockupData
 
-LASSET = bytes.fromhex(
-    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
-)[::-1]
+LASSET = bytes.fromhex("5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225")[::-1]
 
 
 
@@ -143,9 +141,8 @@ def create_onchain_tx(
         _, pubkey = addr_decode(receive_address)
         assert pubkey
         lockup_transaction = LTransaction.from_string(lockup_tx.tx)
-        value, *_ = lockup_transaction.vout[lockup_tx.vout_cnt].unblind(
-            bytes.fromhex(blinding_key)
-        )
+        witness_utxo = lockup_transaction.vout[lockup_tx.vout_cnt]
+        value, *_ = witness_utxo.unblind(bytes.fromhex(blinding_key))
         lockup_tx.vout_amount = value
         vout = LTransactionOutput(
             asset=LASSET,
@@ -159,12 +156,6 @@ def create_onchain_tx(
             asset=LASSET,
             value=int(fees),
             script_pubkey=script.Script(),
-        )
-        witness_utxo = LTransactionOutput(
-            asset=LASSET,
-            value=int(lockup_tx.vout_amount),
-            script_pubkey=script.address_to_scriptpubkey(lockup_tx.script_pub_key),
-            ecdh_pubkey=pubkey.sec(),
         )
         vout = [vout, vout_fees]
     else:
@@ -201,6 +192,8 @@ def create_onchain_tx(
     psbt.inputs[0].final_scriptwitness = witness_script
 
     if isinstance(psbt, PSET):
+        psbt.inputs[0].value = lockup_tx.vout_amount # type: ignore
+        psbt.inputs[0].asset = LASSET  # type: ignore
         psbt.outputs[0].blinding_pubkey = pubkey.sec()  # type: ignore
         rnd = os.urandom(32)
         psbt.blind(rnd)
