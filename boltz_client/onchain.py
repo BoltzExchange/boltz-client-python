@@ -152,20 +152,13 @@ def create_onchain_tx(
             value=int(fees),
             script_pubkey=script.Script(),
         )
-        vout_zero = LTransactionOutput(
-            asset=asset,
-            value=0,
-            script_pubkey=script.address_to_scriptpubkey(
-                to_unconfidential(receive_address)
-            ),
-        )
         vin = LTransactionInput(
             bytes.fromhex(lockup_tx.txid),
             lockup_tx.vout_cnt,
             sequence=sequence,
             script_sig=script_sig,
         )
-        tx = LTransaction(vin=[vin], vout=[vout, vout_fees, vout_zero])
+        tx = LTransaction(vin=[vin], vout=[vout, vout_fees])
     else:
         vout = TransactionOutput(
             lockup_tx.vout_amount - fees,
@@ -201,7 +194,7 @@ def create_onchain_tx(
         psbt.inputs[0].asset = asset  # type: ignore
         # psbt.outputs[0].asset = asset  # type: ignore
         psbt.outputs[0].blinding_pubkey = pubkey.sec()  # type: ignore
-        # rnd = os.urandom(32)
+        rnd = os.urandom(32)
         # # mnemonic = "abandon "*11 + "about"
         # mbkey = ec.PrivateKey.from_string(
         #     "L2U2zGBgimb2vNee3bTw2y936PDJZXq3p7nMXEWuPP5MmpE1nCfv"
