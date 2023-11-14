@@ -5,7 +5,7 @@ from typing import Optional
 
 from embit import ec, script
 from embit.base import EmbitError
-from embit.liquid.finalizer import finalize_psbt
+from embit.hashes import tagged_hash
 from embit.liquid.addresses import addr_decode, to_unconfidential
 from embit.liquid.networks import NETWORKS as LNETWORKS
 from embit.liquid.pset import PSET
@@ -21,8 +21,7 @@ from embit.transaction import SIGHASH, Transaction, TransactionInput, Transactio
 
 from .mempool import LockupData
 
-LASSET = bytes.fromhex("5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225")[::-1]
-
+# LASSET = bytes.fromhex("5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225")[::-1]
 
 
 def get_txid(tx_hex: str, pair: str = "BTC/BTC") -> str:
@@ -131,10 +130,6 @@ def create_onchain_tx(
     blinding_key: Optional[str] = None,
 ) -> tuple[str, str, str]:
 
-    TxInput = LTransactionInput if pair == "L-BTC/BTC" else TransactionInput
-    Tx = LTransaction if pair == "L-BTC/BTC" else Transaction
-    Partial = PSET if pair == "L-BTC/BTC" else PSBT
-
     if pair == "L-BTC/BTC":
         if not blinding_key:
             raise ValueError("Blinding key is required for L-BTC/BTC pair")
@@ -142,10 +137,10 @@ def create_onchain_tx(
         assert pubkey
         lockup_transaction = LTransaction.from_string(lockup_tx.tx)
         witness_utxo = lockup_transaction.vout[lockup_tx.vout_cnt]
-        value, *_ = witness_utxo.unblind(bytes.fromhex(blinding_key))
+        value, asset, *_ = witness_utxo.unblind(bytes.fromhex(blinding_key))
         lockup_tx.vout_amount = value
         vout = LTransactionOutput(
-            asset=LASSET,
+            asset=asset,
             value=int(lockup_tx.vout_amount-fees),
             script_pubkey=script.address_to_scriptpubkey(
                 to_unconfidential(receive_address)
@@ -153,11 +148,24 @@ def create_onchain_tx(
             ecdh_pubkey=pubkey.sec(),
         )
         vout_fees = LTransactionOutput(
-            asset=LASSET,
+            asset=asset,
             value=int(fees),
             script_pubkey=script.Script(),
         )
-        vout = [vout, vout_fees]
+        vout_zero = LTransactionOutput(
+            asset=asset,
+            value=0,
+            script_pubkey=script.address_to_scriptpubkey(
+                to_unconfidential(receive_address)
+            ),
+        )
+        vin = LTransactionInput(
+            bytes.fromhex(lockup_tx.txid),
+            lockup_tx.vout_cnt,
+            sequence=sequence,
+            script_sig=script_sig,
+        )
+        tx = LTransaction(vin=[vin], vout=[vout, vout_fees, vout_zero])
     else:
         vout = TransactionOutput(
             lockup_tx.vout_amount - fees,
@@ -168,14 +176,14 @@ def create_onchain_tx(
             script.address_to_scriptpubkey(lockup_tx.script_pub_key),
         )
         vout = [vout]
+        vin = TransactionInput(
+            bytes.fromhex(lockup_tx.txid),
+            lockup_tx.vout_cnt,
+            sequence=sequence,
+            script_sig=script_sig,
+        )
+        tx = Transaction(vin=[vin], vout=vout)
 
-    vin = TxInput(
-        bytes.fromhex(lockup_tx.txid),
-        lockup_tx.vout_cnt,
-        sequence=sequence,
-        script_sig=script_sig,
-    )
-    tx = Tx(vin=[vin], vout=vout)
     if timeout_block_height > 0:
         tx.locktime = timeout_block_height
 
@@ -186,26 +194,36 @@ def create_onchain_tx(
 
     if pair == "L-BTC/BTC":
         witness_script = TxInWitness(script_witness=witness_script)
-
-    psbt = Partial(tx=tx)
-    psbt.inputs[0].witness_utxo = witness_utxo
-    psbt.inputs[0].final_scriptwitness = witness_script
-
-    if isinstance(psbt, PSET):
+        psbt = PSET(tx=tx)
+        psbt.inputs[0].witness_utxo = witness_utxo
+        psbt.inputs[0].final_scriptwitness = witness_script
         psbt.inputs[0].value = lockup_tx.vout_amount # type: ignore
-        psbt.inputs[0].asset = LASSET  # type: ignore
+        psbt.inputs[0].asset = asset  # type: ignore
+        # psbt.outputs[0].asset = asset  # type: ignore
         psbt.outputs[0].blinding_pubkey = pubkey.sec()  # type: ignore
-        rnd = os.urandom(32)
-        psbt.blind(rnd)
+        # rnd = os.urandom(32)
+        # # mnemonic = "abandon "*11 + "about"
+        # mbkey = ec.PrivateKey.from_string(
+        #     "L2U2zGBgimb2vNee3bTw2y936PDJZXq3p7nMXEWuPP5MmpE1nCfv"
+        # )
+        # seed = tagged_hash("liquid/blinding_seed", mbkey.secret)
+        psbt.blind(rnd)  # type: ignore
         psbt_tx = psbt.blinded_tx.serialize()
+        # finalize
+        ttx = LTransaction.parse(psbt_tx)
+        ttx.vin[0].witness = psbt.inputs[0].final_scriptwitness
+        if script_sig:
+            ttx.vin[0].script_sig = script_sig
     else:
+        psbt = PSBT(tx=tx)
+        psbt.inputs[0].witness_utxo = witness_utxo
+        psbt.inputs[0].final_scriptwitness = witness_script
         psbt_tx = psbt.tx.serialize()
-
-    # finalize
-    ttx = Tx.parse(psbt_tx)
-    ttx.vin[0].witness = witness_script
-    if script_sig:
-        ttx.vin[0].script_sig = script_sig
+        # finalize
+        ttx = Transaction.parse(psbt_tx)
+        ttx.vin[0].witness = witness_script
+        if script_sig:
+            ttx.vin[0].script_sig = script_sig
 
     print("finalized")
     print(bytes.hex(ttx.serialize()))
