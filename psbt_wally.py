@@ -100,6 +100,12 @@ unblinded_amount, unblinded_asset, abf, vbf = wally.asset_unblind(
     lockup_script,
     lockup_asset_commitment,
 )
+utxo = {
+    "satoshi": unblinded_amount,
+    "amountblinder": abf,
+    "asset_id": unblinded_asset,
+    "assetblinder": vbf,
+}
 
 assert unblinded_asset == LASSET, "Wrong asset"
 
@@ -120,6 +126,9 @@ wally.psbt_set_input_witness_utxo_from_tx(psbt, idx, lockup_tx, vout_n)
 wally.psbt_set_input_utxo_rangeproof(psbt, idx, lockup_rangeproof)
 wally.psbt_set_input_witness_script(psbt, idx, lockup_script)
 wally.psbt_set_input_redeem_script(psbt, idx, redeem_script)
+wally.psbt_set_input_amount_rangeproof(psbt, idx, lockup_rangeproof)
+
+wally.psbt_generate_input_explicit_proofs(psbt, idx, utxo['satoshi'], utxo["asset_id"], utxo["assetblinder"], utxo["amountblinder"], secrets.token_bytes(32))
 
 
 # OUTPUT
@@ -140,12 +149,6 @@ wally.psbt_add_tx_output_at(psbt, output_idx + 1, 0, fee_txout)
 
 # BLINDING
 entropy = get_entropy(1)
-utxo = {
-    "satoshi": unblinded_amount,
-    "amountblinder": abf,
-    "asset_id": unblinded_asset,
-    "assetblinder": vbf,
-}
 values, vbfs, assets, abfs = [wally.map_init(1, None) for _ in range(4)]
 set_blinding_data(0, utxo, values, vbfs, assets, abfs)
 
@@ -153,6 +156,7 @@ ephemeral_keys = wally.psbt_blind(
     psbt, values, vbfs, assets, abfs, entropy, output_idx, 0
 )
 # nonce = get_blinding_nonce(psbt, ephemeral_keys, output_idx)
+
 
 
 # signing
@@ -180,5 +184,5 @@ wally.tx_witness_stack_add(witness_script, redeem_script)
 wally.tx_set_input_witness(tx, 0, witness_script)
 
 tx_hex = wally.tx_to_hex(tx, wally.WALLY_TX_FLAG_USE_WITNESS)
-print(tx_hex)
-# print(wally.psbt_to_base64(psbt, wally.WALLY_PSBT_INIT_PSET))
+# print(tx_hex)
+print(wally.psbt_to_base64(psbt, wally.WALLY_PSBT_INIT_PSET))
