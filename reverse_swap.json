@@ -1,0 +1,10 @@
+{
+  "boltz_id": "BSSVS6",
+  "receive_address": "el1qq0a3enk474zrtemnh4r22xa9vr8lk4nt4jccm5jsnz24rdzxyc9mtpay4fdftc9ayztacz82luuc8qm5u0erc6czrmq5q4dg7",
+  "lockup_address": "el1qqdgcn857l3f8caqmt0mskpcf6jca9gss2m98kfznphk8zf6fwxex3vh3cgvjf66vtje3gwlaeg78uaxdpvlauyfqw7tugzcstgq7qtkt0dc9jsggdfp5",
+  "redeem_script_hex": "8201208763a914c21c02e913d00dcf001f03b3bbf4611f95c32e4e88210313d157449da1ab276831b1d16b60274f732be0db3c93c52ed6b0adb20632f4df6775023706b1752102c1070b6258b343de5b07d0405d7e2ecf4c41a377a45d776921bdc6c1f852a3df68ac",
+  "blinding_key": "45c8ae432dbd1e22bc9e0ef8c7ce9024fe61332135bee1fbe8659b5457626e4b",
+  "privkey_wif": "cVeXdDDqoCFTG81NRM1FGrNudZRVJpFRGpVEYgiKHRKCHovXTRLa",
+  "preimage_hex": "f3708a5c2eab1d9bff6fc47e34f3f02310e5a45e634479c300f2a026574de31c",
+  "zeroconf": true
+}

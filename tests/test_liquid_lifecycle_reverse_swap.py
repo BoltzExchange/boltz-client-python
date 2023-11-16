@@ -1,4 +1,5 @@
 import asyncio
+import json
 import pytest
 
 from boltz_client.boltz import BoltzClient
@@ -8,6 +9,7 @@ from .helpers import create_onchain_address, mine_blocks, pay_invoice
 @pytest.mark.asyncio
 async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
     claim_privkey_wif, preimage_hex, swap = client_liquid.create_reverse_swap(10000)
+    new_address = create_onchain_address(client_liquid.pair)
 
     # create_task is used because pay_invoice is stuck as long as boltz does not
     # see the onchain claim tx and it ends up in deadlock
@@ -17,7 +19,19 @@ async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
     if p.poll():
         assert False
 
-    new_address = create_onchain_address(client_liquid.pair)
+    # write reverse swap data to file for testing
+    with open("./reverse_swap.json", "w") as f:
+        f.write(json.dumps({
+            "boltz_id":swap.id,
+            "receive_address":new_address,
+            "lockup_address":swap.lockupAddress,
+            "redeem_script_hex":swap.redeemScript,
+            "blinding_key":swap.blindingKey,
+            "privkey_wif":claim_privkey_wif,
+            "preimage_hex":preimage_hex,
+            "zeroconf":True,
+        }))
+
     txid = await client_liquid.claim_reverse_swap(
         boltz_id=swap.id,
         receive_address=new_address,
