@@ -4,6 +4,7 @@ https://wally.readthedocs.io/en/release_0.8.9/psbt/
 https://github.com/BlockchainCommons/Learning-Bitcoin-from-the-Command-Line/blob/master/07_1_Creating_a_Partially_Signed_Bitcoin_Transaction.md
 
 """
+from __future__ import annotations
 import json
 import secrets
 import wallycore as wally
@@ -192,5 +193,5 @@ wally.tx_witness_stack_add(witness_script, redeem_script)
 wally.tx_set_input_witness(tx, 0, witness_script)
 
 tx_hex = wally.tx_to_hex(tx, wally.WALLY_TX_FLAG_USE_WITNESS)
-# print(tx_hex)
+#print(tx_hex)
 print(wally.psbt_to_base64(psbt, wally.WALLY_PSBT_INIT_PSET))
