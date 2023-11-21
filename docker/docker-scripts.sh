@@ -1,20 +1,34 @@
 #!/bin/sh
 export COMPOSE_PROJECT_NAME=boltz-client
 
+if $(docker --help | grep compose); then
+  # docker compose v2
+  export COMPOSE_CMD="docker compose"
+  export SEP="-"
+else
+  # docker compose v1
+  export COMPOSE_CMD="docker-compose"
+  export SEP="_"
+fi
+
+image-name() {
+  echo "${COMPOSE_PROJECT_NAME}${SEP}$1${SEP}1"
+}
+
 bitcoin-cli-sim() {
-  docker exec $COMPOSE_PROJECT_NAME-bitcoind-1 bitcoin-cli -rpcuser=boltz -rpcpassword=boltz -regtest $@
+  docker exec $(image-name bitcoind) bitcoin-cli -rpcuser=boltz -rpcpassword=boltz -regtest $@
 }
 
 lightning-cli-sim() {
-  docker exec $COMPOSE_PROJECT_NAME-corelightning-1 lightning-cli --network regtest $@
+  docker exec $(image-name corelightning) lightning-cli --network regtest $@
 }
 
 elements-cli-sim() {
-  docker exec $COMPOSE_PROJECT_NAME-elementsd-1 elements-cli "$@"
+  docker exec $(image-name elementsd) elements-cli "$@"
 }
 
 lncli-sim() {
-  docker exec $COMPOSE_PROJECT_NAME-lnd-1 lncli --network regtest --rpcserver=lnd:10009 $@
+  docker exec $(image-name lnd) lncli --network regtest --rpcserver=lnd:10009 $@
 }
 
 fund_corelightning_node() {
@@ -31,23 +45,23 @@ fund_lnd_node() {
 
 connect_corelightning_node() {
   pubkey=$(lightning-cli-sim getinfo | jq -r '.id')
-  lightning-cli-sim connect $pubkey@$COMPOSE_PROJECT_NAME-corelightning-1:9735 | jq -r '.id'
+  lightning-cli-sim connect $pubkey@$(image-name corelightning):9735 | jq -r '.id'
 }
 
 regtest-start(){
   regtest-stop
-  docker compose up -d --remove-orphans
+  $COMPOSE_CMD up -d --remove-orphans
   regtest-init
 }
 
 regtest-start-log(){
   regtest-stop
-  docker compose up --remove-orphans
+  $COMPOSE_CMD up --remove-orphans
   regtest-init
 }
 
 regtest-stop(){
-  docker compose down --volumes
+  $COMPOSE_CMD down --volumes
   # clean up lightning node data
   sudo rm -rf ./data/corelightning ./data/lnd ./data/boltz/boltz.db ./data/elements/liquidregtest
   # recreate lightning node data folders preventing permission errors
@@ -106,7 +120,7 @@ lightning-init(){
   balance_size_msat=12000000000 # 0.12 btc
 
   # lnd-1 -> cln-1
-  lncli-sim connect $(lightning-cli-sim getinfo | jq -r '.id')@$COMPOSE_PROJECT_NAME-corelightning-1 > /dev/null
+  lncli-sim connect $(lightning-cli-sim getinfo | jq -r '.id')@$(image-name corelightning) > /dev/null
   echo "open channel from lnd to corelightning"
   lncli-sim openchannel $(lightning-cli-sim getinfo | jq -r '.id') $channel_size $balance_size > /dev/null
 
