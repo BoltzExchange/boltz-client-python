@@ -18,6 +18,7 @@ from embit.liquid.transaction import (
 from embit.networks import NETWORKS
 from embit.psbt import PSBT
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
+from embit.liquid.finalizer import finalize_psbt
 
 from .mempool import LockupData
 
@@ -135,7 +136,10 @@ def create_onchain_tx(
             raise ValueError("Blinding key is required for L-BTC/BTC pair")
         _, pubkey = addr_decode(receive_address)
         assert pubkey
+        with open("lockup_rawtx.txt", "w") as f:
+            f.write(lockup_tx.tx)
         lockup_transaction = LTransaction.from_string(lockup_tx.tx)
+
         witness_utxo = lockup_transaction.vout[lockup_tx.vout_cnt]
         value, asset, *_ = witness_utxo.unblind(bytes.fromhex(blinding_key))
         lockup_tx.vout_amount = value
@@ -159,6 +163,7 @@ def create_onchain_tx(
             script_sig=script_sig,
         )
         tx = LTransaction(vin=[vin], vout=[vout, vout_fees])
+        tx.sighash_segwit(0, script.Script(data=bytes.fromhex(redeem_script_hex)), value=value)
     else:
         vout = TransactionOutput(
             lockup_tx.vout_amount - fees,
@@ -189,11 +194,13 @@ def create_onchain_tx(
         witness_script = TxInWitness(script_witness=witness_script)
         psbt = PSET(tx=tx)
         psbt.inputs[0].witness_utxo = witness_utxo
+        psbt.inputs[0].non_witness_utxo = vout
         psbt.inputs[0].final_scriptwitness = witness_script
         psbt.inputs[0].value = lockup_tx.vout_amount # type: ignore
         psbt.inputs[0].asset = asset  # type: ignore
         # psbt.outputs[0].asset = asset  # type: ignore
         psbt.outputs[0].blinding_pubkey = pubkey.sec()  # type: ignore
+        # psbt.outputs[0].blinding_index = 0  # type: ignore
         rnd = os.urandom(32)
         # # mnemonic = "abandon "*11 + "about"
         # mbkey = ec.PrivateKey.from_string(
@@ -201,10 +208,16 @@ def create_onchain_tx(
         # )
         # seed = tagged_hash("liquid/blinding_seed", mbkey.secret)
         psbt.blind(rnd)  # type: ignore
+        rawtx = finalize_psbt(psbt)
+        print("!!!!!!!!!!!!!!!!!")
+        print(rawtx)
+        # psbt.verify()
+        print("!!!!!!!!!!!!!!!!!")
+        print(psbt)
         psbt_tx = psbt.blinded_tx.serialize()
         # finalize
         ttx = LTransaction.parse(psbt_tx)
-        ttx.vin[0].witness = psbt.inputs[0].final_scriptwitness
+        ttx.vin[0].witness = witness_script
         if script_sig:
             ttx.vin[0].script_sig = script_sig
     else:
@@ -218,7 +231,7 @@ def create_onchain_tx(
         if script_sig:
             ttx.vin[0].script_sig = script_sig
 
-    print("finalized")
-    print(bytes.hex(ttx.serialize()))
+    # print("finalized")
+    # print(bytes.hex(ttx.serialize()))
 
     return bytes.hex(ttx.txid()), bytes.hex(ttx.serialize()), psbt.to_string()
