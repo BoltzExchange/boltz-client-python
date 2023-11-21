@@ -134,7 +134,7 @@ wally.psbt_set_input_witness_script(psbt, idx, lockup_script)
 wally.psbt_set_input_redeem_script(psbt, idx, redeem_script)
 wally.psbt_set_input_amount_rangeproof(psbt, idx, lockup_rangeproof)
 
-wally.psbt_generate_input_explicit_proofs(psbt, idx, utxo['satoshi'], utxo["asset_id"], utxo["assetblinder"], utxo["amountblinder"], secrets.token_bytes(32))
+# wally.psbt_generate_input_explicit_proofs(psbt, idx, utxo['satoshi'], utxo["asset_id"], utxo["assetblinder"], utxo["amountblinder"], secrets.token_bytes(32))
 
 
 
