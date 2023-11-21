@@ -1,3 +1,9 @@
+"""
+https://github.com/jgriffiths/wally_swap_test/blob/master/main.py
+https://wally.readthedocs.io/en/release_0.8.9/psbt/
+https://github.com/BlockchainCommons/Learning-Bitcoin-from-the-Command-Line/blob/master/07_1_Creating_a_Partially_Signed_Bitcoin_Transaction.md
+
+"""
 import json
 import secrets
 import wallycore as wally
@@ -131,6 +137,7 @@ wally.psbt_set_input_amount_rangeproof(psbt, idx, lockup_rangeproof)
 wally.psbt_generate_input_explicit_proofs(psbt, idx, utxo['satoshi'], utxo["asset_id"], utxo["assetblinder"], utxo["amountblinder"], secrets.token_bytes(32))
 
 
+
 # OUTPUT
 output_idx = wally.psbt_get_num_outputs(psbt)
 asset_tag = bytearray([1]) + unblinded_asset
@@ -163,6 +170,7 @@ ephemeral_keys = wally.psbt_blind(
 wally.psbt_sign(psbt, private_key, wally.EC_FLAG_ECDSA)
 
 # Finalize
+wally.psbt_finalize_input(psbt, idx, 0)
 wally.psbt_finalize(psbt, 0)
 
 tx = wally.psbt_extract(psbt, 1)
