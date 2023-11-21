@@ -89,7 +89,7 @@ for vout in range(wally.tx_get_num_outputs(lockup_tx)):
         vout_n = vout
         break
 
-assert vout_n, "Lockup vout not found"
+assert vout_n is not None, "Lockup vout not found"
 
 txid = wally.tx_get_txid(lockup_tx)
 lockup_script = wally.tx_get_output_script(lockup_tx, vout_n)
