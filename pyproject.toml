@@ -44,7 +44,7 @@ ignore_missing_imports = "True"
 files = "boltz_client"
 
 [tool.pytest.ini_options]
-log_level = "DEBUG"
+# log_level = "DEBUG"
 testpaths = [
   "tests"
 ]

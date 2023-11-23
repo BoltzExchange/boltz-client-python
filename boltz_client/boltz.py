@@ -150,6 +150,15 @@ class BoltzClient:
             headers={"Content-Type": "application/json"},
         )
 
+    def send_onchain_tx(self, rawtw: str) -> dict:
+        data = self.request(
+            "post",
+            f"{self._cfg.api_url}/broadcasttransaction",
+            headers={"Content-Type": "application/json"},
+            json={"currency": self.pair.split("/")[0], "transactionHex": rawtw},
+        )
+        return data["transactionId"]
+
     def add_reverse_swap_fees(self, amount: int) -> int:
         rev = self.fees["minerFees"]["baseAsset"]["reverse"]
         fee = rev["claim"] + rev["lockup"]
@@ -282,7 +291,7 @@ class BoltzClient:
         if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
 
-        txid, transaction = create_claim_tx(
+        transaction = create_claim_tx(
             lockup_tx=lockup_tx,
             receive_address=receive_address,
             privkey_wif=privkey_wif,
@@ -294,8 +303,7 @@ class BoltzClient:
             if feerate
             else self.get_fee_estimation_claim(),
         )
-        self.mempool.send_onchain_tx(transaction)
-        return txid
+        return self.send_onchain_tx(transaction)
 
     async def refund_swap(
         self,
@@ -327,7 +335,7 @@ class BoltzClient:
         lockup_txid = await self.wait_for_txid(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
         # lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
-        txid, transaction = create_refund_tx(
+        transaction = create_refund_tx(
             lockup_tx=lockup_tx,
             privkey_wif=privkey_wif,
             receive_address=receive_address,
@@ -339,8 +347,7 @@ class BoltzClient:
             if feerate
             else self.get_fee_estimation_refund(),
         )
-        self.mempool.send_onchain_tx(transaction)
-        return txid
+        return self.send_onchain_tx(transaction)
 
     def create_swap(self, payment_request: str) -> tuple[str, BoltzSwapResponse]:
         """create swap and return private key and boltz response"""

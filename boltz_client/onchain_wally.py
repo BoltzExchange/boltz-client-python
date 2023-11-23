@@ -35,7 +35,7 @@ def create_liquid_tx(
     preimage_hex: str = "",
     script_sig: Optional[str] = None,
     blinding_key: Optional[str] = None,
-) -> tuple[str, str]:
+) -> str:
 
     try:
         import wallycore as wally
@@ -53,13 +53,6 @@ def create_liquid_tx(
     assert blinding_key, "blinding_key is required"
     blinding_key_bytes = bytes.fromhex(blinding_key)
 
-    lockup_address = lockup_tx.address
-    lockup_unconfidential_address = wally.confidential_addr_to_addr_segwit(
-        lockup_address, "el", "ert"
-    )  # type: ignore
-    lockup_script_pubkey = wally.addr_segwit_to_bytes(
-        lockup_unconfidential_address, "ert", 0
-    )  # type: ignore
     receive_blinding_pubkey = wally.confidential_addr_segwit_to_ec_public_key(
         receive_address, "el"
     )  # type: ignore
@@ -76,7 +69,8 @@ def create_liquid_tx(
     vout_n: int | None = None
     for vout in range(wally.tx_get_num_outputs(lockup_transaction)):
         script_out = wally.tx_get_output_script(lockup_transaction, vout)  # type: ignore
-        if script_out == lockup_script_pubkey:
+        pub_key = wally.addr_segwit_from_bytes(script_out, "ert", 0)
+        if pub_key == lockup_tx.script_pub_key:
             vout_n = vout
             break
 
@@ -112,8 +106,7 @@ def create_liquid_tx(
     # ADD PSBT INPUT
     idx = wally.psbt_get_num_inputs(psbt)
     # Add the txout from the lockup tx as the witness UTXO for our input
-    seq = 0xFFFFFFFE  # RBF not enabled for liquid yet
-    input_ = wally.tx_input_init(txid, vout_n, seq, None, None)
+    input_ = wally.tx_input_init(txid, vout_n, sequence, None, None)
     wally.psbt_add_tx_input_at(psbt, idx, 0, input_)
     wally.psbt_set_input_witness_utxo_from_tx(psbt, idx, lockup_transaction, vout_n)
     # Add the rangeproof
@@ -196,6 +189,6 @@ def create_liquid_tx(
 
     # Extract the completed tx from the now-finalized psbt
     tx = wally.psbt_extract(psbt, 0)  # 0 == must be finalized
-    txid = str(wally.tx_get_txid(tx))  # type: ignore
     rawtx = str(wally.tx_to_hex(tx, wally.WALLY_TX_FLAG_USE_WITNESS))
-    return txid, rawtx
+
+    return rawtx

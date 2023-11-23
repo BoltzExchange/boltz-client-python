@@ -93,10 +93,12 @@ services:
   #     - 8080:8080
 
   mempool-api:
+    image: mempool/backend:latest
     depends_on:
       # - electrs
       - mempool-db
     environment:
+      REDIS_ENABLED: false
       MEMPOOL_BACKEND: "none"
       BACKEND_HTTP_PORT: "8999"
       # ELECTRUM_HOST: electrs
@@ -111,41 +113,42 @@ services:
       DATABASE_DATABASE: "mempool"
       DATABASE_USERNAME: "mempool"
       DATABASE_PASSWORD: "mempool"
-      STATISTICS_ENABLED: "true"
-    image: mempool/backend:latest
+      # STATISTICS_ENABLED: "true"
     restart: unless-stopped
     ports:
       - 8999:8999
 
   mempool-db:
+    image: mariadb:10.5.8
     environment:
       MYSQL_DATABASE: "mempool"
       MYSQL_USER: "mempool"
       MYSQL_PASSWORD: "mempool"
       MYSQL_ROOT_PASSWORD: "admin"
-    image: mariadb:10.5.8
 
   mempool-api-liquid:
+    image: mempool/backend:latest
     depends_on:
       # - electrs
       - mempool-db
     environment:
+      REDIS_ENABLED: false
+      MEMPOOL_NETWORK: liquid
+      BACKEND_HTTP_PORT: 8998
       MEMPOOL_BACKEND: "none"
-      BACKEND_HTTP_PORT: "8998"
       # ELECTRUM_HOST: electrs
       # ELECTRUM_PORT: "50001"
       # ELECTRUM_TLS_ENABLED: "false"
       CORE_RPC_HOST: elementsd
-      CORE_RPC_PORT: "18884"
-      CORE_RPC_USERNAME: "boltz"
-      CORE_RPC_PASSWORD: "boltz"
-      DATABASE_ENABLED: "true"
+      CORE_RPC_PORT: 18884
+      CORE_RPC_USERNAME: boltz
+      CORE_RPC_PASSWORD: boltz
+      DATABASE_ENABLED: true
       DATABASE_HOST: "mempool-db-liquid"
       DATABASE_DATABASE: "mempool"
       DATABASE_USERNAME: "mempool"
       DATABASE_PASSWORD: "mempool"
-      STATISTICS_ENABLED: "true"
-    image: mempool/backend:latest
+      # STATISTICS_ENABLED: "true"
     restart: unless-stopped
     ports:
       - 8998:8998

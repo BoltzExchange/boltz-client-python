@@ -66,7 +66,7 @@ def create_refund_tx(
     pair: str,
     fees: int,
     blinding_key: Optional[str] = None,
-) -> tuple[str, str]:
+) -> str:
     # encrypt redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
     rs += sha256(bytes.fromhex(redeem_script_hex)).digest()
@@ -94,7 +94,7 @@ def create_claim_tx(
     fees: int,
     pair: str,
     blinding_key: Optional[str] = None,
-) -> tuple[str, str]:
+) -> str:
     return create_onchain_tx(
         preimage_hex=preimage_hex,
         lockup_tx=lockup_tx,
@@ -119,11 +119,12 @@ def create_onchain_tx(
     preimage_hex: str = "",
     script_sig: Optional[script.Script] = None,
     blinding_key: Optional[str] = None,
-) -> tuple[str, str]:
+) -> str:
 
     if pair == "L-BTC/BTC":
         if not blinding_key:
             raise ValueError("Blinding key is required for L-BTC/BTC pair")
+
         return create_liquid_tx(
             lockup_tx=lockup_tx,
             receive_address=receive_address,
@@ -133,19 +134,14 @@ def create_onchain_tx(
             sequence=sequence,
             timeout_block_height=timeout_block_height,
             preimage_hex=preimage_hex,
-            script_sig=script_sig,
+            # script_sig=script_sig,
             blinding_key=blinding_key,
         )
-
 
     vout = TransactionOutput(
         lockup_tx.vout_amount - fees,
         script.address_to_scriptpubkey(receive_address),
     )
-    # witness_utxo = TransactionOutput(
-    #     lockup_tx.vout_amount,
-    #     script.address_to_scriptpubkey(lockup_tx.script_pub_key),
-    # )
     vout = [vout]
     vin = TransactionInput(
         bytes.fromhex(lockup_tx.txid),
@@ -163,15 +159,8 @@ def create_onchain_tx(
     sig = ec.PrivateKey.from_wif(privkey_wif).sign(h).serialize() + bytes([SIGHASH.ALL])
     witness_script = script.Witness( items=[ sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex) ])
 
-    # psbt = PSBT(tx=tx)
-    # psbt.inputs[0].witness_utxo = witness_utxo
-    # psbt.inputs[0].final_scriptwitness = witness_script
-    # psbt_tx = psbt.tx.serialize()
-
-    # # finalize
-    # ttx = Transaction.parse(psbt_tx)
     tx.vin[0].witness = witness_script
     if script_sig:
         tx.vin[0].script_sig = script_sig
 
-    return bytes.hex(tx.txid()), bytes.hex(tx.serialize())
+    return bytes.hex(tx.serialize())

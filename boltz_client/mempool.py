@@ -17,7 +17,6 @@ class LockupData:
     status: str
     tx: str
     txid: str
-    address: str
     script_pub_key: str
     vout_cnt: int
     vout_amount: int
@@ -104,7 +103,6 @@ class MempoolClient:
                 return LockupData(
                     tx=self.get_tx_hex(tx["txid"]),
                     txid=tx["txid"],
-                    address=address,
                     script_pub_key=vout["scriptpubkey_address"],
                     vout_cnt=i,
                     vout_amount=vout["value"],
