@@ -2,13 +2,13 @@ version: "3.7"
 services:
 
   boltz:
+    image: boltz/boltz:3.3.0
     hostname: boltz
+    restart: on-failure
     depends_on:
       - lnd
       - elementsd
       - bitcoind
-    image: boltz/boltz:3.3.0
-    entrypoint: "sh -c 'sleep 40; /boltz-backend/bin/boltzd'"
     ports:
       - 9000:9000
       - 9001:9001
@@ -18,8 +18,8 @@ services:
       - ./data/elements/:/root/.elements/
 
   elementsd:
-    hostname: elements
     image: ghcr.io/vulpemventures/elements:22.1.1
+    hostname: elements
     expose:
       - 18884
       - 31000
@@ -29,9 +29,18 @@ services:
       - ./data/elements/:/home/elements/.elements/
 
   bitcoind:
-    hostname: bitcoind
     image: boltz/bitcoin-core:24.0.1
-    command: "-regtest -fallbackfee=0.00000253 -zmqpubrawtx=tcp://0.0.0.0:29000 -zmqpubrawblock=tcp://0.0.0.0:29001 -txindex -rpcallowip=0.0.0.0/0 -rpcbind=0.0.0.0 -rpcuser=boltz -rpcpassword=boltz"
+    hostname: bitcoind
+    command:
+      - -regtest
+      - -fallbackfee=0.00000253
+      - -zmqpubrawtx=tcp://0.0.0.0:29000
+      - -zmqpubrawblock=tcp://0.0.0.0:29001
+      - -txindex
+      - -rpcallowip=0.0.0.0/0
+      - -rpcbind=0.0.0.0
+      - -rpcuser=boltz
+      - -rpcpassword=boltz
     expose:
       - 29000
       - 29001
@@ -40,10 +49,19 @@ services:
 
   corelightning:
     hostname: corelightning
+    restart: on-failure
     depends_on:
       - bitcoind
     image: boltz/c-lightning:23.08.1
-    entrypoint: "sh -c 'sleep 15 && lightningd --dev-bitcoind-poll=1 --large-channels --network regtest --bind-addr=0.0.0.0:9735 --bitcoin-rpcconnect=bitcoind --bitcoin-rpcport=18443 --bitcoin-rpcuser=boltz --bitcoin-rpcpassword=boltz'"
+    command:
+      - --network=regtest
+      - --bind-addr=0.0.0.0:9735
+      - --dev-bitcoind-poll=1
+      - --large-channels
+      - --bitcoin-rpcconnect=bitcoind
+      - --bitcoin-rpcport=18443
+      - --bitcoin-rpcuser=boltz
+      - --bitcoin-rpcpassword=boltz
     expose:
       - 9735
     volumes:
@@ -55,7 +73,20 @@ services:
       - bitcoind
     image: boltz/lnd:0.16.3-beta
     restart: on-failure
-    entrypoint: "sh -c 'sleep 20; lnd --listen=lnd:9735 --rpclisten=lnd:10009 --restlisten=lnd:8081 --bitcoin.active --bitcoin.regtest --bitcoin.node=bitcoind --bitcoind.rpchost=bitcoind --bitcoind.zmqpubrawtx=bitcoind:29000 --bitcoind.zmqpubrawblock=bitcoind:29001 --bitcoind.rpcuser=boltz --bitcoind.rpcpass=boltz --noseedbackup --protocol.wumbo-channels'"
+    command:
+      - --listen=lnd:9735
+      - --rpclisten=lnd:10009
+      - --restlisten=lnd:8081
+      - --bitcoin.active
+      - --bitcoin.regtest
+      - --bitcoin.node=bitcoind
+      - --bitcoind.rpchost=bitcoind
+      - --bitcoind.zmqpubrawtx=bitcoind:29000
+      - --bitcoind.zmqpubrawblock=bitcoind:29001
+      - --bitcoind.rpcuser=boltz
+      - --bitcoind.rpcpass=boltz
+      - --noseedbackup
+      - --protocol.wumbo-channels
     ports:
       - 8081:8081
       - 10009:10009
@@ -72,10 +103,10 @@ services:
   #   hostname: electrs
   #   image: getumbrel/electrs:latest
   #   environment:
-  #     ELECTRS_ELECTRUM_RPC_ADDR: "electrs:50001"
-  #     ELECTRS_DAEMON_RPC_ADDR: "bitcoind:18443"
-  #     ELECTRS_DAEMON_P2P_ADDR: "bitcoind:18444"
-  #   entrypoint: "sh -c 'sleep 15 && electrs'"
+  #     ELECTRS_ELECTRUM_RPC_ADDR: electrs:50001
+  #     ELECTRS_DAEMON_RPC_ADDR: bitcoind:18443
+  #     ELECTRS_DAEMON_P2P_ADDR: bitcoind:18444
+  #   entrypoint: sh -c 'sleep 15 && electrs'
   #   ports:
   #     - 50001:50001
   #   volumes:
@@ -86,8 +117,8 @@ services:
   #   depends_on:
   #     - mempool-api
   #   environment:
-  #     FRONTEND_HTTP_PORT: "8080"
-  #     BACKEND_MAINNET_HTTP_HOST: "mempool-api"
+  #     FRONTEND_HTTP_PORT: 8080
+  #     BACKEND_MAINNET_HTTP_HOST: mempool-api
   #   image: mempool/frontend:latest
   #   ports:
   #     - 8080:8080
@@ -99,21 +130,21 @@ services:
       - mempool-db
     environment:
       REDIS_ENABLED: false
-      MEMPOOL_BACKEND: "none"
-      BACKEND_HTTP_PORT: "8999"
+      MEMPOOL_BACKEND: none
+      BACKEND_HTTP_PORT: 8999
       # ELECTRUM_HOST: electrs
-      # ELECTRUM_PORT: "50001"
-      # ELECTRUM_TLS_ENABLED: "false"
+      # ELECTRUM_PORT: 50001
+      # ELECTRUM_TLS_ENABLED: false
       CORE_RPC_HOST: bitcoind
-      CORE_RPC_PORT: "18443"
-      CORE_RPC_USERNAME: "boltz"
-      CORE_RPC_PASSWORD: "boltz"
-      DATABASE_ENABLED: "true"
-      DATABASE_HOST: "mempool-db"
-      DATABASE_DATABASE: "mempool"
-      DATABASE_USERNAME: "mempool"
-      DATABASE_PASSWORD: "mempool"
-      # STATISTICS_ENABLED: "true"
+      CORE_RPC_PORT: 18443
+      CORE_RPC_USERNAME: boltz
+      CORE_RPC_PASSWORD: boltz
+      DATABASE_ENABLED: true
+      DATABASE_HOST: mempool-db
+      DATABASE_DATABASE: mempool
+      DATABASE_USERNAME: mempool
+      DATABASE_PASSWORD: mempool
+      # STATISTICS_ENABLED: true
     restart: unless-stopped
     ports:
       - 8999:8999
@@ -121,10 +152,10 @@ services:
   mempool-db:
     image: mariadb:10.5.8
     environment:
-      MYSQL_DATABASE: "mempool"
-      MYSQL_USER: "mempool"
-      MYSQL_PASSWORD: "mempool"
-      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_DATABASE: mempool
+      MYSQL_USER: mempool
+      MYSQL_PASSWORD: mempool
+      MYSQL_ROOT_PASSWORD: admin
 
   mempool-api-liquid:
     image: mempool/backend:latest
@@ -135,28 +166,28 @@ services:
       REDIS_ENABLED: false
       MEMPOOL_NETWORK: liquid
       BACKEND_HTTP_PORT: 8998
-      MEMPOOL_BACKEND: "none"
+      MEMPOOL_BACKEND: none
       # ELECTRUM_HOST: electrs
-      # ELECTRUM_PORT: "50001"
-      # ELECTRUM_TLS_ENABLED: "false"
+      # ELECTRUM_PORT: 50001
+      # ELECTRUM_TLS_ENABLED: false
       CORE_RPC_HOST: elementsd
       CORE_RPC_PORT: 18884
       CORE_RPC_USERNAME: boltz
       CORE_RPC_PASSWORD: boltz
       DATABASE_ENABLED: true
-      DATABASE_HOST: "mempool-db-liquid"
-      DATABASE_DATABASE: "mempool"
-      DATABASE_USERNAME: "mempool"
-      DATABASE_PASSWORD: "mempool"
-      # STATISTICS_ENABLED: "true"
+      DATABASE_HOST: mempool-db-liquid
+      DATABASE_DATABASE: mempool
+      DATABASE_USERNAME: mempool
+      DATABASE_PASSWORD: mempool
+      # STATISTICS_ENABLED: true
     restart: unless-stopped
     ports:
       - 8998:8998
 
   mempool-db-liquid:
     environment:
-      MYSQL_DATABASE: "mempool"
-      MYSQL_USER: "mempool"
-      MYSQL_PASSWORD: "mempool"
-      MYSQL_ROOT_PASSWORD: "admin"
+      MYSQL_DATABASE: mempool
+      MYSQL_USER: mempool
+      MYSQL_PASSWORD: mempool
+      MYSQL_ROOT_PASSWORD: admin
     image: mariadb:10.5.8

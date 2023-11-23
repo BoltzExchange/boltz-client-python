@@ -150,7 +150,7 @@ class BoltzClient:
             headers={"Content-Type": "application/json"},
         )
 
-    def send_onchain_tx(self, rawtw: str) -> dict:
+    def send_onchain_tx(self, rawtw: str) -> str:
         data = self.request(
             "post",
             f"{self._cfg.api_url}/broadcasttransaction",
@@ -235,15 +235,13 @@ class BoltzClient:
                 if swap_transaction.transactionHex:
                     return get_txid(swap_transaction.transactionHex, self.pair)
                 raise ValueError("transactionHex is empty")
-            except (ValueError, BoltzApiException, BoltzSwapTransactionException) as exc:
-                print(exc)
+            except (ValueError, BoltzApiException, BoltzSwapTransactionException):
                 await asyncio.sleep(3)
 
     async def wait_for_txid_on_status(self, boltz_id: str) -> str:
         while True:
             try:
                 status = self.swap_status(boltz_id)
-                print(status)
                 assert status.transaction
                 txid = status.transaction.get("id")
                 assert txid

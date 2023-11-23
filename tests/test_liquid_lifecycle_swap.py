@@ -10,7 +10,6 @@ from .helpers import create_onchain_address, mine_blocks, pay_onchain
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip
 async def test_create_swap_and_check_status(client_liquid: BoltzClient, pr):
     _, swap = client_liquid.create_swap(pr)
 
@@ -61,10 +60,10 @@ async def test_create_swap_and_refund(client_liquid: BoltzClient, pr_refund):
         )
 
     # wait for timeout
-    blocks_to_mine = swap.timeoutBlockHeight - client_liquid.mempool.get_blockheight() + 3
-    print("blocks_to_mine", blocks_to_mine)
+    blocks_to_mine = swap.timeoutBlockHeight - client_liquid.mempool.get_blockheight() + 10
     mine_blocks(pair=client_liquid.pair, blocks=blocks_to_mine)
-    await asyncio.sleep(5)
+
+    await asyncio.sleep(10)
 
     # actually refund
     txid_refund = await client_liquid.refund_swap(

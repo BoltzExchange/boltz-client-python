@@ -25,15 +25,15 @@ async def test_create_swap_direction(client):
 @pytest.mark.asyncio
 async def test_create_swap_and_check_status(client, pr):
     refund_privkey_wif, swap = client.create_swap(pr)
-    assert type(refund_privkey_wif) == str
-    assert type(swap) == BoltzSwapResponse
+    assert isinstance(refund_privkey_wif, str)
+    assert isinstance(swap, BoltzSwapResponse)
     assert hasattr(swap, "id")
     assert hasattr(swap, "address")
     assert hasattr(swap, "expectedAmount")
 
     # combining those to test save creating an extra swap :)
     swap_status = client.swap_status(swap.id)
-    assert type(swap_status) == BoltzSwapStatusResponse
+    assert isinstance(swap_status, BoltzSwapStatusResponse)
     assert hasattr(swap_status, "status")
     assert swap_status.status == "invoice.set"
 
@@ -86,6 +86,8 @@ async def test_create_swap_and_refund(client: BoltzClient, pr_refund):
     # wait for timeout
     blocks_to_mine = swap.timeoutBlockHeight - client.mempool.get_blockheight() + 3
     mine_blocks(blocks=blocks_to_mine)
+
+    await asyncio.sleep(3)
 
     # actually refund
     txid = await client.refund_swap(
