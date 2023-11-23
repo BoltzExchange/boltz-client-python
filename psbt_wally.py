@@ -43,9 +43,9 @@ def get_entropy(num_outputs_to_blind):
 
 # INIT
 with open("./reverse_swap.json") as f:
-    swap_json = f.read()
+    swap_json = f.read().strip()
 with open("./lockup_rawtx.txt") as f:
-    lockup_rawtx = f.read()
+    lockup_rawtx = f.read().strip()
 
 reverse_swap = json.loads(swap_json)
 redeem_script = bytes.fromhex(reverse_swap["redeem_script_hex"])
