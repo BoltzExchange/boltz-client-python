@@ -99,7 +99,7 @@ lockup_asset_commitment = wally.tx_get_output_asset(lockup_tx, vout_n)
 lockup_value_commitment = wally.tx_get_output_value(lockup_tx, vout_n)
 
 # UNBLIND
-unblinded_amount, unblinded_asset, abf, vbf = wally.asset_unblind(
+unblinded_amount, unblinded_asset, vbf, abf = wally.asset_unblind(
     lockup_ephemeral_pubkey,
     blinding_key,
     lockup_rangeproof,
