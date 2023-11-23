@@ -1,5 +1,4 @@
 import asyncio
-import json
 import pytest
 
 from boltz_client.boltz import BoltzClient
@@ -18,19 +17,6 @@ async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
     # check if pay_invoice is done / fails first
     if p.poll():
         assert False
-
-    # write reverse swap data to file for testing
-    with open("./reverse_swap.json", "w") as f:
-        f.write(json.dumps({
-            "boltz_id":swap.id,
-            "receive_address":new_address,
-            "lockup_address":swap.lockupAddress,
-            "redeem_script_hex":swap.redeemScript,
-            "blinding_key":swap.blindingKey,
-            "privkey_wif":claim_privkey_wif,
-            "preimage_hex":preimage_hex,
-            "zeroconf":True,
-        }))
 
     txid = await client_liquid.claim_reverse_swap(
         boltz_id=swap.id,

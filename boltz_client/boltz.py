@@ -239,7 +239,7 @@ class BoltzClient:
                 txid = status.transaction.get("id")
                 assert txid
                 return txid
-            except (BoltzApiException, BoltzSwapStatusException, AssertionError) as exc:
+            except (BoltzApiException, BoltzSwapStatusException, AssertionError):
                 await asyncio.sleep(3)
 
     def validate_address(self, address: str):
@@ -282,7 +282,7 @@ class BoltzClient:
         if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
 
-        txid, transaction, _ = create_claim_tx(
+        txid, transaction = create_claim_tx(
             lockup_tx=lockup_tx,
             receive_address=receive_address,
             privkey_wif=privkey_wif,
@@ -327,7 +327,7 @@ class BoltzClient:
         lockup_txid = await self.wait_for_txid(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
         # lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
-        txid, transaction, _ = create_refund_tx(
+        txid, transaction = create_refund_tx(
             lockup_tx=lockup_tx,
             privkey_wif=privkey_wif,
             receive_address=receive_address,
