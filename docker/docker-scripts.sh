@@ -1,7 +1,7 @@
 #!/bin/sh
 export COMPOSE_PROJECT_NAME=boltz-client
 
-if $(docker --help | grep compose); then
+if [[ $(docker --help | grep compose) ]]; then
   # docker compose v2
   export COMPOSE_CMD="docker compose"
   export SEP="-"
