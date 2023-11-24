@@ -12,7 +12,6 @@ from typing import Optional
 from .mempool import LockupData
 
 
-
 def get_entropy(num_outputs_to_blind):
     # For each output to blind, we need 32 bytes of entropy for each of:
     # - Output assetblinder
@@ -32,7 +31,7 @@ def create_liquid_tx(
     sequence: int = 0xFFFFFFFF,
     timeout_block_height: int = 0,
     preimage_hex: str = "",
-    script_sig: Optional[bytes] = None,
+    # script_sig: Optional[bytes] = None,
     blinding_key: Optional[str] = None,
 ) -> str:
 
@@ -42,7 +41,6 @@ def create_liquid_tx(
         raise ImportError(
             "`wallycore` is not installed, but required for liquid support."
         ) from exc
-
 
     # TODO: different for network
     LASSET = bytes.fromhex(

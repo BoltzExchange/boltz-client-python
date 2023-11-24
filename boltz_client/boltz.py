@@ -1,11 +1,12 @@
 """ boltz_client main module """
 
 import asyncio
-import httpx
 from dataclasses import dataclass, field
 from enum import Enum
 from math import ceil, floor
 from typing import Optional
+
+import httpx
 
 from .helpers import req_wrap
 from .mempool import MempoolClient

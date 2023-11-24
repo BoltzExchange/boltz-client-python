@@ -140,7 +140,7 @@ def create_onchain_tx(
             sequence=sequence,
             timeout_block_height=timeout_block_height,
             preimage_hex=preimage_hex,
-            script_sig=script_sig,
+            # script_sig=script_sig,
             blinding_key=blinding_key,
         )
 
@@ -153,7 +153,7 @@ def create_onchain_tx(
         bytes.fromhex(lockup_tx.txid),
         lockup_tx.vout_cnt,
         sequence=sequence,
-        script_sig = script.Script(data=script_sig) if script_sig else None,
+        script_sig=script.Script(data=script_sig) if script_sig else None,
     )
     tx = Transaction(vin=[vin], vout=vout)
 

@@ -152,7 +152,7 @@ class MempoolClient:
 
     def get_fees(self) -> int:
         # weird quirk in mempool space api
-        api_url = self._api_url.replace('/v1', '')
+        api_url = self._api_url.replace("/v1", "")
         data = self.request(
             "get",
             f"{api_url}/fees/recommended",
