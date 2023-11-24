@@ -48,7 +48,7 @@ services:
       - 31001
       - 31002
     volumes:
-      - ./data/elements/:/home/elements/.elements/
+      - ./data/elements/elements.conf:/home/elements/.elements/elements.conf
 
   corelightning:
     hostname: corelightning
