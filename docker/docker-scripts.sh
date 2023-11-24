@@ -127,8 +127,8 @@ lightning-init(){
   bitcoin-cli-sim -generate 10 > /dev/null
   wait-for-lnd-channel
   wait-for-corelightning-channel
-  echo "wait for 10s... warmup..."
-  sleep 10
+  echo "wait for 15s... warmup..."
+  sleep 15
   lightning-sync
 
 }
