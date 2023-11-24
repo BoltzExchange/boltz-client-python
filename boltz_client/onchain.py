@@ -8,11 +8,12 @@ from embit.base import EmbitError
 from embit.liquid.networks import NETWORKS as LNETWORKS
 from embit.liquid.transaction import LTransaction
 from embit.networks import NETWORKS
+
 # from embit.psbt import PSBT
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
-from .onchain_wally import create_liquid_tx
 from .mempool import LockupData
+from .onchain_wally import create_liquid_tx
 
 
 def get_txid(tx_hex: str, pair: str = "BTC/BTC") -> str:
@@ -157,7 +158,9 @@ def create_onchain_tx(
     redeem_script = script.Script(data=bytes.fromhex(redeem_script_hex))
     h = tx.sighash_segwit(0, redeem_script, lockup_tx.vout_amount)
     sig = ec.PrivateKey.from_wif(privkey_wif).sign(h).serialize() + bytes([SIGHASH.ALL])
-    witness_script = script.Witness( items=[ sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex) ])
+    witness_script = script.Witness(
+        items=[sig, bytes.fromhex(preimage_hex), bytes.fromhex(redeem_script_hex)]
+    )
 
     tx.vin[0].witness = witness_script
     if script_sig:

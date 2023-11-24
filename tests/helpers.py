@@ -1,13 +1,24 @@
 """ boltz_client test helpers """
-
 import json
 import time
+from typing import Optional
 from subprocess import PIPE, Popen, run
 
 docker_bitcoin_rpc = "boltz"
 docker_prefix = "boltz-client"
 docker_cmd = "docker exec"
-is_compose_v2 = None  # Set to True/False depending on docker compose version
+is_compose_v2: Optional[bool] = None  # Set to True/False depending on docker compose version
+
+
+docker_lightning = "corelightning"
+docker_lightning_cli = "lightning-cli --network regtest"
+
+docker_bitcoin = "bitcoind"
+docker_bitcoin_cli = f"bitcoin-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc} -regtest"
+
+docker_elements = "elementsd"
+docker_elements_cli = f"elements-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc}"
+
 
 def run_cmd(cmd: str) -> str:
     return run(cmd, shell=True, capture_output=True).stdout.decode("UTF-8").strip()
@@ -19,15 +30,6 @@ def get_docker_cmd(image: str, cmd: str) -> str:
         is_compose_v2 = 'Compose' in run_cmd("docker --help")
     suffix = f"-{image}-1" if is_compose_v2 else f"_{image}_1"
     return f"{docker_cmd} {docker_prefix}{suffix} {cmd}"
-
-docker_lightning = f"corelightning"
-docker_lightning_cli = f"lightning-cli --network regtest"
-
-docker_bitcoin = f"bitcoind"
-docker_bitcoin_cli = f"bitcoin-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc} -regtest"
-
-docker_elements = f"elementsd"
-docker_elements_cli = f"elements-cli -rpcuser={docker_bitcoin_rpc} -rpcpassword={docker_bitcoin_rpc}"
 
 
 def get_invoice(sats: int, prefix: str, description: str = "test") -> dict:
@@ -49,6 +51,7 @@ def run_core_cli_cmd(pair: str, cli_cmd: str) -> str:
     else:
         cmd = get_docker_cmd(docker_bitcoin, f"{docker_bitcoin_cli} {cli_cmd}")
     return run_cmd(cmd)
+
 
 def mine_blocks(pair: str = "BTC/BTC", blocks: int = 1) -> str:
     return run_core_cli_cmd(pair, f"-generate {blocks}")

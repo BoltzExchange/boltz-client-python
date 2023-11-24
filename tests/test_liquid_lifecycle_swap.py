@@ -33,7 +33,7 @@ async def test_create_swap_and_refund(client_liquid: BoltzClient, liquid_pr_refu
     refund_privkey_wif, swap = client_liquid.create_swap(liquid_pr_refund)
 
     # pay to less onchain so the swap fails
-    txid = pay_onchain(swap.address, swap.expectedAmount - 1000, client_liquid.pair)
+    _ = pay_onchain(swap.address, swap.expectedAmount - 1000, client_liquid.pair)
 
     await asyncio.sleep(1)
     mine_blocks(client_liquid.pair)
@@ -63,7 +63,7 @@ async def test_create_swap_and_refund(client_liquid: BoltzClient, liquid_pr_refu
     await asyncio.sleep(10)
 
     # actually refund
-    txid_refund = await client_liquid.refund_swap(
+    _ = await client_liquid.refund_swap(
         boltz_id=swap.id,
         privkey_wif=refund_privkey_wif,
         lockup_address=swap.address,

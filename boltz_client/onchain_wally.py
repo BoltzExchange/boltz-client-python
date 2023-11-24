@@ -5,8 +5,10 @@ https://github.com/BlockchainCommons/Learning-Bitcoin-from-the-Command-Line/blob
 special thanks to @jgriffiths for helping debugging this!
 """
 from __future__ import annotations
+
 import secrets
 from typing import Optional
+
 from .mempool import LockupData
 
 LASSET = bytes.fromhex(
@@ -39,8 +41,10 @@ def create_liquid_tx(
 
     try:
         import wallycore as wally
-    except ImportError:
-        raise Exception("`wallycore` is not installed, but required for liquid support.")
+    except ImportError as exc:
+        raise ImportError(
+            "`wallycore` is not installed, but required for liquid support."
+        ) from exc
 
     redeem_script = bytes.fromhex(redeem_script_hex)
     preimage = bytes.fromhex(preimage_hex)
@@ -63,9 +67,10 @@ def create_liquid_tx(
         receive_unconfidential_address, "ert", 0
     )  # type: ignore
 
-
     # parse lockup tx
-    lockup_transaction = wally.tx_from_hex(lockup_tx.tx, wally.WALLY_TX_FLAG_USE_ELEMENTS)
+    lockup_transaction = wally.tx_from_hex(
+        lockup_tx.tx, wally.WALLY_TX_FLAG_USE_ELEMENTS
+    )
     vout_n: int | None = None
     for vout in range(wally.tx_get_num_outputs(lockup_transaction)):
         script_out = wally.tx_get_output_script(lockup_transaction, vout)  # type: ignore
@@ -129,7 +134,8 @@ def create_liquid_tx(
     # Uncomment to generate explicit value proofs for the input.
     # These expose the unblinded value and asset in the PSBT; we
     # don't need them for this use-case.
-    # wally.psbt_generate_input_explicit_proofs(psbt, idx, unblinded_amount, unblinded_asset, abf, vbf, secrets.token_bytes(32))
+    # wally.psbt_generate_input_explicit_proofs(psbt, idx, unblinded_amount,
+    # unblinded_asset, abf, vbf, secrets.token_bytes(32))
 
     # ADD PSBT OUTPUT
     output_idx = wally.psbt_get_num_outputs(psbt)
@@ -145,7 +151,6 @@ def create_liquid_tx(
     fee_txout = wally.tx_elements_output_init(None, asset_tag, fee_value)
     wally.psbt_add_tx_output_at(psbt, output_idx + 1, 0, fee_txout)
 
-
     # BLIND PSBT
     entropy = get_entropy(1)
     values, vbfs, assets, abfs = [wally.map_init(1, None) for _ in range(4)]
@@ -156,16 +161,15 @@ def create_liquid_tx(
     wally.map_add_integer(assets, idx, unblinded_asset)
     wally.map_add_integer(abfs, idx, abf)
 
-    ephemeral_keys = wally.psbt_blind(
-        psbt, values, vbfs, assets, abfs, entropy, output_idx, 0
-    )
+    # ephemeral_keys
+    _ = wally.psbt_blind(psbt, values, vbfs, assets, abfs, entropy, output_idx, 0)
 
     # SIGN PSBT
     # wally can identify the input to sign because we gave the keypath above
     wally.psbt_sign(psbt, private_key, wally.EC_FLAG_ECDSA)
     # Fetch the signature from the PSBT input for finalization
     sig_pos = wally.psbt_find_input_signature(psbt, idx, signing_pubkey)
-    assert sig_pos != 0, 'signature not found'
+    assert sig_pos != 0, "signature not found"
     sig = wally.psbt_get_input_signature(psbt, idx, sig_pos - 1)  # type: ignore
 
     # FINALIZE PSBT

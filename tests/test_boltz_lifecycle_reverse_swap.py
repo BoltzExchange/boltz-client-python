@@ -14,9 +14,9 @@ from .helpers import create_onchain_address, mine_blocks, pay_invoice
 @pytest.mark.asyncio
 async def test_create_reverse_swap_and_claim(client: BoltzClient):
     claim_privkey_wif, preimage_hex, swap = client.create_reverse_swap(10000)
-    assert type(claim_privkey_wif) == str
-    assert type(preimage_hex) == str
-    assert type(swap) == BoltzReverseSwapResponse
+    assert isinstance(claim_privkey_wif, str)
+    assert isinstance(preimage_hex, str)
+    assert isinstance(swap, BoltzReverseSwapResponse)
     assert hasattr(swap, "id")
     assert hasattr(swap, "invoice")
     assert hasattr(swap, "redeemScript")
@@ -26,7 +26,7 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
 
     # # combining those to test save creating an extra swap :)
     swap_status = client.swap_status(swap.id)
-    assert type(swap_status) == BoltzSwapStatusResponse
+    assert isinstance(swap_status, BoltzSwapStatusResponse)
     assert hasattr(swap_status, "status")
     assert swap_status.status == "swap.created"
 

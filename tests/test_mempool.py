@@ -18,7 +18,7 @@ async def test_api_exception():
 @pytest.mark.asyncio
 async def test_blockheight(client):
     blockheight = client.mempool.get_blockheight()
-    assert type(blockheight) == int
+    assert isinstance(blockheight, int)
 
 
 @pytest.mark.asyncio
@@ -37,7 +37,7 @@ async def test_check_blockheight(client):
 @pytest.mark.asyncio
 async def test_fees(client):
     fees = client.mempool.get_fees()
-    assert type(fees) == int
+    assert isinstance(fees, int)
     assert fees == 1
 
 
@@ -45,9 +45,3 @@ async def test_fees(client):
 async def test_send_invalid_onchain(client, raw_tx_invalid):
     with pytest.raises(MempoolApiException):
         client.mempool.send_onchain_tx(raw_tx_invalid)
-
-
-# @pytest.mark.asyncio
-# async def test_send_valid_onchain(client, raw_tx):
-#     sent = client.mempool.send_onchain_tx(raw_tx)
-#     print(sent)
