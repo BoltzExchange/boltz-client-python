@@ -82,10 +82,6 @@ bitcoin-init(){
 
 elements-init(){
   echo "init_elements_wallet..."
-  docker logs boltz-client-elementsd-1
-  sleep 10
-  docker logs boltz-client-elementsd-1
-
   elements-cli-sim createwallet regtest || elements-cli-sim loadwallet regtest true
   echo "mining 150 liquid blocks..."
   elements-cli-sim -generate 150 > /dev/null
@@ -133,8 +129,8 @@ lightning-init(){
   bitcoin-cli-sim -generate 10 > /dev/null
   wait-for-lnd-channel
   wait-for-corelightning-channel
-  echo "wait for 15s... warmup..."
-  sleep 15
+  echo "wait for 10s... warmup..."
+  sleep 10
   lightning-sync
 
 }
