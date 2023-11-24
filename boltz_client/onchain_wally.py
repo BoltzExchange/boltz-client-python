@@ -11,9 +11,6 @@ from typing import Optional
 
 from .mempool import LockupData
 
-LASSET = bytes.fromhex(
-    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
-)[::-1]
 
 
 def get_entropy(num_outputs_to_blind):
@@ -46,11 +43,19 @@ def create_liquid_tx(
             "`wallycore` is not installed, but required for liquid support."
         ) from exc
 
+
+    # TODO: different for network
+    LASSET = bytes.fromhex(
+        "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
+    )[::-1]
+    confidential_addr_family = "el"
+    confidential_addr_prefix = "ert"
+
     redeem_script = bytes.fromhex(redeem_script_hex)
     preimage = bytes.fromhex(preimage_hex)
     private_key = wally.wif_to_bytes(
         privkey_wif,
-        wally.WALLY_ADDRESS_VERSION_WIF_TESTNET,
+        wally.WALLY_ADDRESS_VERSION_WIF_MAINNET,
         wally.WALLY_WIF_FLAG_COMPRESSED,
     )  # type: ignore
 
@@ -58,23 +63,23 @@ def create_liquid_tx(
     blinding_key_bytes = bytes.fromhex(blinding_key)
 
     receive_blinding_pubkey = wally.confidential_addr_segwit_to_ec_public_key(
-        receive_address, "el"
+        receive_address, confidential_addr_family
     )  # type: ignore
     receive_unconfidential_address = wally.confidential_addr_to_addr_segwit(
-        receive_address, "el", "ert"
+        receive_address, confidential_addr_family, confidential_addr_prefix
     )  # type: ignore
     receive_script_pubkey = wally.addr_segwit_to_bytes(
-        receive_unconfidential_address, "ert", 0
+        receive_unconfidential_address, confidential_addr_prefix, 0
     )  # type: ignore
 
     # parse lockup tx
     lockup_transaction = wally.tx_from_hex(
-        lockup_tx.tx, wally.WALLY_TX_FLAG_USE_ELEMENTS
+        lockup_tx.tx_hex, wally.WALLY_TX_FLAG_USE_ELEMENTS
     )
     vout_n: Optional[int] = None
     for vout in range(wally.tx_get_num_outputs(lockup_transaction)):
         script_out = wally.tx_get_output_script(lockup_transaction, vout)  # type: ignore
-        pub_key = wally.addr_segwit_from_bytes(script_out, "ert", 0)
+        pub_key = wally.addr_segwit_from_bytes(script_out, confidential_addr_prefix, 0)
         if pub_key == lockup_tx.script_pub_key:
             vout_n = vout
             break

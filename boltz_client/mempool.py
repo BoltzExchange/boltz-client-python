@@ -104,7 +104,7 @@ class MempoolClient:
             if vout["scriptpubkey_address"] == address:
                 status = "confirmed" if tx["status"]["confirmed"] else "unconfirmed"
                 return LockupData(
-                    tx=self.get_tx_hex(tx["txid"]),
+                    tx_hex=self.get_tx_hex(tx["txid"]),
                     txid=tx["txid"],
                     script_pub_key=vout["scriptpubkey_address"],
                     vout_cnt=i,
