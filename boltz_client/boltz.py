@@ -284,7 +284,6 @@ class BoltzClient:
 
         lockup_txid = await self.wait_for_txid_on_status(boltz_id)
         lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
-        # lockup_tx = await self.mempool.get_tx_from_address(lockup_address)
 
         if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)

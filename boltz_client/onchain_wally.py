@@ -71,7 +71,7 @@ def create_liquid_tx(
     lockup_transaction = wally.tx_from_hex(
         lockup_tx.tx, wally.WALLY_TX_FLAG_USE_ELEMENTS
     )
-    vout_n: int | None = None
+    vout_n: Optional[int] = None
     for vout in range(wally.tx_get_num_outputs(lockup_transaction)):
         script_out = wally.tx_get_output_script(lockup_transaction, vout)  # type: ignore
         pub_key = wally.addr_segwit_from_bytes(script_out, "ert", 0)
