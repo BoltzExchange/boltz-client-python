@@ -5,6 +5,7 @@ from typing import Optional
 
 from embit import ec, script
 from embit.base import EmbitError
+from embit.liquid.addresses import to_unconfidential
 from embit.liquid.networks import NETWORKS as LNETWORKS
 from embit.liquid.transaction import LTransaction
 from embit.networks import NETWORKS
@@ -30,10 +31,14 @@ def get_txid(tx_hex: str, pair: str = "BTC/BTC") -> str:
 def validate_address(address: str, network: str, pair: str):
     if pair == "L-BTC/BTC":
         net = LNETWORKS[network]
+        _address = to_unconfidential(address)
+        if not _address:
+            raise ValueError("can not unconfidentialize address")
     else:
         net = NETWORKS[network]
+        _address = address
     try:
-        addr = script.Script.from_address(address) or script.Script()
+        addr = script.Script.from_address(_address) or script.Script()
         if addr.address(net) != address:
             raise ValueError("Invalid network")
     except EmbitError as exc:

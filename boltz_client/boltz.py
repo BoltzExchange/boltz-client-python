@@ -1,13 +1,11 @@
 """ boltz_client main module """
 
 import asyncio
+import httpx
 from dataclasses import dataclass, field
 from enum import Enum
 from math import ceil, floor
 from typing import Optional
-
-import httpx
-from embit.liquid.addresses import to_unconfidential
 
 from .helpers import req_wrap
 from .mempool import MempoolClient
@@ -264,18 +262,7 @@ class BoltzClient:
         blinding_key: Optional[str] = None,
     ):
 
-        if self.pair == "L-BTC/BTC":
-            unconfidential_lockup_address = to_unconfidential(lockup_address)
-            if not unconfidential_lockup_address:
-                raise BoltzApiException("can not unconfidentialize lockup address")
-            lockup_address = unconfidential_lockup_address
-            unconfidential_receive_address = to_unconfidential(receive_address)
-            if not unconfidential_receive_address:
-                raise BoltzApiException("can not unconfidentialize receive address")
-            self.validate_address(unconfidential_receive_address)
-        else:
-            self.validate_address(receive_address)
-
+        self.validate_address(receive_address)
         self.validate_address(lockup_address)
 
         lockup_txid = await self.wait_for_txid_on_status(boltz_id)
@@ -310,19 +297,7 @@ class BoltzClient:
         blinding_key: Optional[str] = None,
     ) -> str:
         self.mempool.check_block_height(timeout_block_height)
-
-        if self.pair == "L-BTC/BTC":
-            unconfidential_lockup_address = to_unconfidential(lockup_address)
-            if not unconfidential_lockup_address:
-                raise BoltzApiException("can not unconfidentialize lockup address")
-            lockup_address = unconfidential_lockup_address
-            unconfidential_receive_address = to_unconfidential(receive_address)
-            if not unconfidential_receive_address:
-                raise BoltzApiException("can not unconfidentialize receive address")
-            self.validate_address(unconfidential_receive_address)
-        else:
-            self.validate_address(receive_address)
-
+        self.validate_address(receive_address)
         self.validate_address(lockup_address)
 
         lockup_txid = await self.wait_for_txid(boltz_id)
