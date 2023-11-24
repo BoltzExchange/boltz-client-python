@@ -102,9 +102,7 @@ class BoltzConfig:
     pairs: list = field(default_factory=lambda: ["BTC/BTC", "L-BTC/BTC"])
     api_url: str = "https://boltz.exchange/api"
     mempool_url: str = "https://mempool.space/api/v1"
-    mempool_ws_url: str = "wss://mempool.space/api/v1/ws"
     mempool_liquid_url: str = "https://liquid.network/api/v1"
-    mempool_liquid_ws_url: str = "wss://liquid.network/api/v1/ws"
     referral_id: str = "dni"
 
 
@@ -123,13 +121,11 @@ class BoltzClient:
         if self.pair == "L-BTC/BTC":
             self.network = self._cfg.network_liquid
             mempool_url = self._cfg.mempool_liquid_url
-            mempool_ws_url = self._cfg.mempool_liquid_ws_url
         else:
             self.network = self._cfg.network
             mempool_url = self._cfg.mempool_url
-            mempool_ws_url = self._cfg.mempool_ws_url
 
-        self.mempool = MempoolClient(mempool_url, mempool_ws_url)
+        self.mempool = MempoolClient(mempool_url)
 
     def request(self, funcname, *args, **kwargs) -> dict:
         try:

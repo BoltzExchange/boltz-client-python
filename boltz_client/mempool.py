@@ -31,8 +31,11 @@ class MempoolBlockHeightException(Exception):
 
 
 class MempoolClient:
-    def __init__(self, url, ws_url):
+    def __init__(self, url):
         self._api_url = url
+        ws_url = url.replace("https", "wss")
+        ws_url = url.replace("http", "ws")
+        ws_url += "/ws"
         self._ws_url = ws_url
         # just check if mempool is available
         self.get_blockheight()
@@ -148,9 +151,11 @@ class MempoolClient:
         return lockup_tx
 
     def get_fees(self) -> int:
+        # weird quirk in mempool space api
+        api_url = self._api_url.replace('/v1', '')
         data = self.request(
             "get",
-            f"{self._api_url}/fees/recommended",
+            f"{api_url}/fees/recommended",
             headers={"Content-Type": "application/json"},
         )
         return int(data["halfHourFee"])

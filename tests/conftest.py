@@ -13,9 +13,7 @@ config = BoltzConfig(
     network_liquid="elementsregtest",
     api_url="http://localhost:9001",
     mempool_url="http://localhost:8999/api/v1",
-    mempool_ws_url="ws://localhost:8999/api/v1/ws",
     mempool_liquid_url="http://localhost:8998/api/v1",
-    mempool_liquid_ws_url="ws://localhost:8998/api/v1/ws",
 )
 
 
