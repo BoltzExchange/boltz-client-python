@@ -35,7 +35,7 @@ def create_liquid_tx(
     sequence: int = 0xFFFFFFFF,
     timeout_block_height: int = 0,
     preimage_hex: str = "",
-    script_sig: Optional[str] = None,
+    script_sig: Optional[bytes] = None,
     blinding_key: Optional[str] = None,
 ) -> str:
 
@@ -183,8 +183,8 @@ def create_liquid_tx(
     wally.psbt_set_input_final_witness(psbt, idx, stack)
     # 2) Set the final_scriptsig. For p2wsh this must be empty, so
     #    we don't have to do anything.
-    if script_sig:
-        wally.psbt_set_input_final_scriptsig(psbt, idx, bytes.fromhex(script_sig))
+    # if script_sig:
+    #     wally.psbt_set_input_final_scriptsig(psbt, idx, script_sig)
 
     # OUTPUT FINALIZED PSBT/TX
     # Convert the PSBT to base64, then parse in strict mode.

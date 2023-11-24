@@ -71,7 +71,7 @@ def create_refund_tx(
     # encrypt redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
     rs += sha256(bytes.fromhex(redeem_script_hex)).digest()
-    script_sig = script.Script(data=rs)
+    script_sig = rs
     return create_onchain_tx(
         sequence=0xFFFFFFFE,
         redeem_script_hex=redeem_script_hex,
@@ -118,7 +118,7 @@ def create_onchain_tx(
     sequence: int = 0xFFFFFFFF,
     timeout_block_height: int = 0,
     preimage_hex: str = "",
-    script_sig: Optional[script.Script] = None,
+    script_sig: Optional[bytes] = None,
     blinding_key: Optional[str] = None,
 ) -> str:
 
@@ -135,7 +135,7 @@ def create_onchain_tx(
             sequence=sequence,
             timeout_block_height=timeout_block_height,
             preimage_hex=preimage_hex,
-            # script_sig=script_sig,
+            script_sig=script_sig,
             blinding_key=blinding_key,
         )
 
@@ -148,7 +148,7 @@ def create_onchain_tx(
         bytes.fromhex(lockup_tx.txid),
         lockup_tx.vout_cnt,
         sequence=sequence,
-        script_sig=script_sig,
+        script_sig = script.Script(data=script_sig) if script_sig else None,
     )
     tx = Transaction(vin=[vin], vout=vout)
 
@@ -164,6 +164,6 @@ def create_onchain_tx(
 
     tx.vin[0].witness = witness_script
     if script_sig:
-        tx.vin[0].script_sig = script_sig
+        tx.vin[0].script_sig = script.Script(data=script_sig)
 
     return bytes.hex(tx.serialize())
