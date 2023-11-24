@@ -51,7 +51,6 @@ connect_corelightning_node() {
 regtest-start(){
   regtest-stop
   $COMPOSE_CMD up -d --remove-orphans
-  sleep 10
   regtest-init
 }
 
@@ -83,6 +82,7 @@ bitcoin-init(){
 
 elements-init(){
   echo "init_elements_wallet..."
+  sleep 10
   elements-cli-sim createwallet regtest || elements-cli-sim loadwallet regtest true
   echo "mining 150 liquid blocks..."
   elements-cli-sim -generate 150 > /dev/null

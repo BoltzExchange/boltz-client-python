@@ -39,7 +39,7 @@ services:
   elementsd:
     image: ghcr.io/vulpemventures/elements:22.1.1
     hostname: elements
-    restart: on-failure
+    restart: unless-stopped
     depends_on:
       - bitcoind
     expose:
