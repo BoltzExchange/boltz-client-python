@@ -102,6 +102,8 @@ def create_liquid_tx(
     psbt_version = wally.WALLY_PSBT_VERSION_2  # PSET only supports v2
     psbt = wally.psbt_init(psbt_version, num_vin, num_vout, 0, psbt_flags)
 
+    if timeout_block_height > 0:
+        wally.psbt_set_fallback_locktime(psbt, timeout_block_height)
 
     # ADD PSBT INPUT
     idx = wally.psbt_get_num_inputs(psbt)
@@ -177,6 +179,8 @@ def create_liquid_tx(
     wally.psbt_set_input_final_witness(psbt, idx, stack)
     # 2) Set the final_scriptsig. For p2wsh this must be empty, so
     #    we don't have to do anything.
+    if script_sig:
+        wally.psbt_set_input_final_scriptsig(psbt, idx, bytes.fromhex(script_sig))
 
     # OUTPUT FINALIZED PSBT/TX
     # Convert the PSBT to base64, then parse in strict mode.
@@ -189,6 +193,7 @@ def create_liquid_tx(
 
     # Extract the completed tx from the now-finalized psbt
     tx = wally.psbt_extract(psbt, 0)  # 0 == must be finalized
+
     rawtx = str(wally.tx_to_hex(tx, wally.WALLY_TX_FLAG_USE_WITNESS))
 
     return rawtx

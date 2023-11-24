@@ -10,8 +10,8 @@ from .helpers import create_onchain_address, mine_blocks, pay_onchain
 
 
 @pytest.mark.asyncio
-async def test_create_swap_and_check_status(client_liquid: BoltzClient, pr):
-    _, swap = client_liquid.create_swap(pr)
+async def test_create_swap_and_check_status(client_liquid: BoltzClient, liquid_pr):
+    _, swap = client_liquid.create_swap(liquid_pr)
 
     _ = pay_onchain(swap.address, swap.expectedAmount, client_liquid.pair)
 
@@ -29,15 +29,13 @@ async def test_create_swap_and_check_status(client_liquid: BoltzClient, pr):
 
 
 @pytest.mark.asyncio
-async def test_create_swap_and_refund(client_liquid: BoltzClient, pr_refund):
-    refund_privkey_wif, swap = client_liquid.create_swap(pr_refund)
+async def test_create_swap_and_refund(client_liquid: BoltzClient, liquid_pr_refund):
+    refund_privkey_wif, swap = client_liquid.create_swap(liquid_pr_refund)
 
     # pay to less onchain so the swap fails
     txid = pay_onchain(swap.address, swap.expectedAmount - 1000, client_liquid.pair)
-    print("txid", txid)
 
     await asyncio.sleep(1)
-
     mine_blocks(client_liquid.pair)
     await asyncio.sleep(1)
 
@@ -45,7 +43,6 @@ async def test_create_swap_and_refund(client_liquid: BoltzClient, pr_refund):
         client_liquid.swap_status(swap.id)
 
     onchain_address = create_onchain_address(client_liquid.pair)
-    print("onchain_address", onchain_address)
 
     # try refund before timeout
     with pytest.raises(MempoolBlockHeightException):
@@ -75,7 +72,6 @@ async def test_create_swap_and_refund(client_liquid: BoltzClient, pr_refund):
         timeout_block_height=swap.timeoutBlockHeight,
         blinding_key=swap.blindingKey,
     )
-    print("txid_refund", txid_refund)
 
     mine_blocks(pair=client_liquid.pair)
     await asyncio.sleep(1)

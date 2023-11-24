@@ -69,3 +69,15 @@ async def pr_small():
 async def pr_refund():
     invoice = get_invoice(10001, "pr-3")
     yield invoice["bolt11"]
+
+
+@pytest_asyncio.fixture(scope="session")
+async def liquid_pr():
+    invoice = get_invoice(10000, "liquid-pr-1")
+    yield invoice["bolt11"]
+
+
+@pytest_asyncio.fixture(scope="session")
+async def liquid_pr_refund():
+    invoice = get_invoice(10001, "liquid-pr-2")
+    yield invoice["bolt11"]

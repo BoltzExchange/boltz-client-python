@@ -29,12 +29,9 @@ async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
         zeroconf=True,
     )
 
-    # task = asyncio.create_task(client_liquid.mempool.wait_for_tx_confirmed(txid))
-    # mine_blocks(client_liquid.pair)
-    # await task
-
-    swap_status_after_confirmed = client_liquid.swap_status(swap.id)
-    assert swap_status_after_confirmed.status == "transaction.mempool"
+    task = asyncio.create_task(client_liquid.mempool.wait_for_tx_confirmed(txid))
+    mine_blocks(client_liquid.pair)
+    await task
 
     mine_blocks(client_liquid.pair)
 
