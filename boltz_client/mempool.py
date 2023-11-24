@@ -15,7 +15,7 @@ from .helpers import req_wrap
 @dataclass
 class LockupData:
     status: str
-    tx: str
+    tx_hex: str
     txid: str
     script_pub_key: str
     vout_cnt: int
