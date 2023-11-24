@@ -68,7 +68,7 @@ def create_refund_tx(
     fees: int,
     blinding_key: Optional[str] = None,
 ) -> str:
-    # encrypt redeemscript to script_sig
+    # redeemscript to script_sig
     rs = bytes([34]) + bytes([0]) + bytes([32])
     rs += sha256(bytes.fromhex(redeem_script_hex)).digest()
     script_sig = rs
