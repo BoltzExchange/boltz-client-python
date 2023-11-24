@@ -4,7 +4,7 @@ services:
   boltz:
     image: boltz/boltz:3.3.0
     hostname: boltz
-    restart: on-failure
+    restart: unless-stopped
     depends_on:
       - lnd
       - elementsd
@@ -16,17 +16,6 @@ services:
       - ./data/lnd:/data/lnd/
       - ./data/boltz/:/root/.boltz/
       - ./data/elements/:/root/.elements/
-
-  elementsd:
-    image: ghcr.io/vulpemventures/elements:22.1.1
-    hostname: elements
-    expose:
-      - 18884
-      - 31000
-      - 31001
-      - 31002
-    volumes:
-      - ./data/elements/:/home/elements/.elements/
 
   bitcoind:
     image: boltz/bitcoin-core:24.0.1
@@ -46,6 +35,20 @@ services:
       - 29001
       - 18443
       - 18444
+
+  elementsd:
+    image: ghcr.io/vulpemventures/elements:22.1.1
+    hostname: elements
+    restart: on-failure
+    depends_on:
+      - bitcoind
+    expose:
+      - 18884
+      - 31000
+      - 31001
+      - 31002
+    volumes:
+      - ./data/elements/:/home/elements/.elements/
 
   corelightning:
     hostname: corelightning
