@@ -28,6 +28,10 @@ channel_size_msat=24000000000 # 0.024 btc
 balance_size_msat=12000000000 # 0.012 btc
 channel_count=1
 
+echo "=================================="
+printf "\033[;1;36mstarting regtest... initial warmup 5s\033[;0m\n"
+echo "=================================="
+
 source $(pwd)/docker-scripts.sh
 regtest-start
 echo "=================================="

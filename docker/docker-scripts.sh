@@ -51,6 +51,7 @@ connect_corelightning_node() {
 regtest-start(){
   regtest-stop
   $COMPOSE_CMD up -d --remove-orphans
+  sleep 5
   regtest-init
 }
 
