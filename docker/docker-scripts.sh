@@ -82,7 +82,10 @@ bitcoin-init(){
 
 elements-init(){
   echo "init_elements_wallet..."
+  docker logs regtest-elementsd-1
   sleep 10
+  docker logs regtest-elementsd-1
+
   elements-cli-sim createwallet regtest || elements-cli-sim loadwallet regtest true
   echo "mining 150 liquid blocks..."
   elements-cli-sim -generate 150 > /dev/null
