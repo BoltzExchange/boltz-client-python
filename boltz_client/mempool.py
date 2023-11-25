@@ -151,11 +151,9 @@ class MempoolClient:
         return lockup_tx
 
     def get_fees(self) -> int:
-        # weird quirk in mempool space api
-        api_url = self._api_url.replace("/v1", "")
         data = self.request(
             "get",
-            f"{api_url}/fees/recommended",
+            f"{self._api_url}/fees/recommended",
             headers={"Content-Type": "application/json"},
         )
         return int(data["halfHourFee"])
