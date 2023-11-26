@@ -42,12 +42,19 @@ def create_liquid_tx(
             "`wallycore` is not installed, but required for liquid support."
         ) from exc
 
-    # TODO: different for network
-    LASSET = bytes.fromhex(
-        "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
-    )[::-1]
-    confidential_addr_family = "el"
-    confidential_addr_prefix = "ert"
+    if receive_address.startswith("ert") or receive_address.startswith("el"):
+        # testnet: "144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49",
+        lasset_hex ="5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
+        confidential_addr_prefix = "ert" # testnet: "tex"
+        confidential_addr_family = "el" # testnet: "tlq"
+    elif receive_address.startswith("ex") or receive_address.startswith("lq"):
+        lasset_hex = "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d"
+        confidential_addr_prefix = "ex"
+        confidential_addr_family = "lq"
+    else:
+        raise ValueError(f"Unknown prefix: {receive_address[:3]}")
+
+    LASSET = bytes.fromhex(lasset_hex)[::-1]
 
     redeem_script = bytes.fromhex(redeem_script_hex)
     preimage = bytes.fromhex(preimage_hex)
