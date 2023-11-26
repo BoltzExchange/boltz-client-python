@@ -65,7 +65,7 @@ def create_swap(payment_request: str, pair: str = "BTC/BTC"):
     click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
     click.echo(
         f"boltz refund-swap {swap.id} {refund_privkey_wif} {swap.address} YOUR_RECEIVEADDRESS "
-        f"{swap.redeemScript} {swap.timeoutBlockHeight} {swap.blindingKey}"
+        f"{swap.redeemScript} {swap.timeoutBlockHeight} {pair} {swap.blindingKey}"
     )
 
 
@@ -144,9 +144,10 @@ def create_reverse_swap(sats: int, pair: str = "BTC/BTC", direction: str = "send
     click.echo()
     click.echo("run this command after you see the lockup transaction:")
     click.echo("CHANGE YOUR_RECEIVEADDRESS to your onchain address!!!")
+    zeroconf = "true"
     click.echo(
         f"boltz claim-reverse-swap {swap.id} {swap.lockupAddress} YOUR_RECEIVEADDRESS "
-        f"{claim_privkey_wif} {preimage_hex} {swap.redeemScript} {swap.blindingKey}"
+        f"{claim_privkey_wif} {preimage_hex} {swap.redeemScript} {pair} {zeroconf} {swap.blindingKey}"
     )
 
 
