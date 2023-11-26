@@ -31,7 +31,6 @@ def create_liquid_tx(
     sequence: int = 0xFFFFFFFF,
     timeout_block_height: int = 0,
     preimage_hex: str = "",
-    # script_sig: Optional[bytes] = None,
     blinding_key: Optional[str] = None,
 ) -> str:
 

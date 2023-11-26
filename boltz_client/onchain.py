@@ -143,7 +143,6 @@ def create_onchain_tx(
             sequence=sequence,
             timeout_block_height=timeout_block_height,
             preimage_hex=preimage_hex,
-            # script_sig=script_sig,
             blinding_key=blinding_key,
         )
 
