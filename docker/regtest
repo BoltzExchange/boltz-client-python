@@ -28,6 +28,10 @@ channel_size_msat=24000000000 # 0.024 btc
 balance_size_msat=12000000000 # 0.012 btc
 channel_count=1
 
+echo "=================================="
+printf "\033[;1;36mstarting regtest...\033[;0m\n"
+echo "=================================="
+
 source $(pwd)/docker-scripts.sh
 regtest-start
 echo "=================================="
@@ -54,6 +58,7 @@ run "cln channel[0].our_amount_msat" $balance_size_msat $(lightning-cli-sim list
 
 run "boltz service status" "200" $(curl -s -o /dev/null --head -w "%{http_code}" "http://localhost:9001/version")
 run "mempool service status" "200" $(curl -s -o /dev/null --head -w "%{http_code}" "http://localhost:8999/api/v1/blocks/tip/height")
+run "mempool_liquid service status" "200" $(curl -s -o /dev/null --head -w "%{http_code}" "http://localhost:8998/api/v1/blocks/tip/height")
 
 # return non-zero exit code if a test fails
 if [[ "$failed" == "true" ]]; then

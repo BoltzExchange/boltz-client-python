@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "boltz_client"
-version = "0.1.8"
+version = "0.2.0"
 description = "python boltz client"
 license = "MIT"
 authors = ["dni <office@dnilabs.com>"]
@@ -15,9 +15,10 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.10 | ^3.9"
 httpx = ">=0.23"
-embit = ">=0.4"
+embit = "^0.7.0"
 click = ">=8"
 websockets = ">=10"
+wallycore = "1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest-asyncio = "^0.20.3"
@@ -54,8 +55,12 @@ max-line-length = 125
 [tool.pylint.'MESSAGES CONTROL']
 disable = [
   "fixme",
+  "import-outside-toplevel",
   "invalid-name",
   "too-many-arguments",
   "missing-function-docstring",
-  "missing-class-docstring"
+  "missing-class-docstring",
+  "too-many-instance-attributes",
+  "too-many-locals",
+  "too-many-statements",
 ]

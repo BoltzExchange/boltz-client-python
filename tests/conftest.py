@@ -7,6 +7,15 @@ from boltz_client.boltz import BoltzClient, BoltzConfig
 
 from .helpers import get_invoice
 
+config = BoltzConfig(
+    pairs=["BTC/BTC", "L-BTC/BTC"],
+    network="regtest",
+    network_liquid="elementsregtest",
+    api_url="http://localhost:9001",
+    mempool_url="http://localhost:8999/api/v1",
+    mempool_liquid_url="http://localhost:8998/api/v1",
+)
+
 
 @pytest_asyncio.fixture(scope="session")
 def event_loop():
@@ -18,13 +27,13 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def client():
-    config = BoltzConfig(
-        network="regtest",
-        api_url="http://localhost:9001",
-        mempool_url="http://localhost:8999/api/v1",
-        mempool_ws_url="ws://localhost:8999/api/v1/ws",
-    )
     client = BoltzClient(config)
+    yield client
+
+
+@pytest_asyncio.fixture(scope="session")
+async def client_liquid():
+    client = BoltzClient(config, pair="L-BTC/BTC")
     yield client
 
 
@@ -57,4 +66,16 @@ async def pr_small():
 @pytest_asyncio.fixture(scope="session")
 async def pr_refund():
     invoice = get_invoice(10001, "pr-3")
+    yield invoice["bolt11"]
+
+
+@pytest_asyncio.fixture(scope="session")
+async def liquid_pr():
+    invoice = get_invoice(10000, "liquid-pr-1")
+    yield invoice["bolt11"]
+
+
+@pytest_asyncio.fixture(scope="session")
+async def liquid_pr_refund():
+    invoice = get_invoice(10001, "liquid-pr-2")
     yield invoice["bolt11"]
