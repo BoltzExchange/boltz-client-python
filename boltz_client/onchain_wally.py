@@ -1,6 +1,6 @@
 """
 https://github.com/jgriffiths/wally_swap_test/blob/master/main.py
-https://wally.readthedocs.io/en/release_0.8.9/psbt/
+https://wally.readthedocs.io/en/release_1.0.0/psbt/
 https://github.com/BlockchainCommons/Learning-Bitcoin-from-the-Command-Line/blob/master/07_1_Creating_a_Partially_Signed_Bitcoin_Transaction.md
 special thanks to @jgriffiths for helping debugging this!
 """
@@ -176,12 +176,12 @@ def create_liquid_tx(
     wally.map_add_integer(assets, idx, unblinded_asset)
     wally.map_add_integer(abfs, idx, abf)
 
-    # ephemeral_keys
+    # returns ephemeral_keys
     _ = wally.psbt_blind(psbt, values, vbfs, assets, abfs, entropy, output_idx, 0)
 
     # SIGN PSBT
     # wally can identify the input to sign because we gave the keypath above
-    wally.psbt_sign(psbt, private_key, wally.EC_FLAG_ECDSA)
+    wally.psbt_sign(psbt, private_key, wally.EC_FLAG_GRIND_R)
     # Fetch the signature from the PSBT input for finalization
     sig_pos = wally.psbt_find_input_signature(psbt, idx, signing_pubkey)
     assert sig_pos != 0, "signature not found"
@@ -208,7 +208,6 @@ def create_liquid_tx(
     wally.psbt_from_base64(base64, wally.WALLY_PSBT_PARSE_FLAG_STRICT)
     # Dump the psbt. To extract the finalized tx, use e.g:
     # elements-cli-sim finalizepsbt $(python psbt_wally.py) true
-    # print(base64)
 
     # Extract the completed tx from the now-finalized psbt
     tx = wally.psbt_extract(psbt, 0)  # 0 == must be finalized
