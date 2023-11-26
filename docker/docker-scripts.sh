@@ -54,12 +54,6 @@ regtest-start(){
   regtest-init
 }
 
-regtest-start-log(){
-  regtest-stop
-  $COMPOSE_CMD up --remove-orphans
-  regtest-init
-}
-
 regtest-stop(){
   $COMPOSE_CMD down --volumes
   # clean up lightning node data
