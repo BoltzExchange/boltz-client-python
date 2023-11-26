@@ -10,7 +10,6 @@ from embit.liquid.networks import NETWORKS as LNETWORKS
 from embit.liquid.transaction import LTransaction
 from embit.networks import NETWORKS
 
-# from embit.psbt import PSBT
 from embit.transaction import SIGHASH, Transaction, TransactionInput, TransactionOutput
 
 from .mempool import LockupData
