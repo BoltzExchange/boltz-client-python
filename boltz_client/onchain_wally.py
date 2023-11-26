@@ -66,8 +66,8 @@ def create_liquid_tx(
     assert blinding_key, "blinding_key is required"
     try:
         blinding_key_bytes = bytes.fromhex(blinding_key)
-    except ValueError:
-        raise ValueError("blinding_key must be hex encoded")
+    except ValueError as exc:
+        raise ValueError("blinding_key must be hex encoded") from exc
 
     receive_blinding_pubkey = wally.confidential_addr_segwit_to_ec_public_key(
         receive_address, confidential_addr_family
