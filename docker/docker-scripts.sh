@@ -119,7 +119,7 @@ lightning-init(){
 
   channel_size=24000000 # 0.024 btc
   balance_size=12000000 # 0.12 btc
-  balance_size_msat=balance_size*1000
+  balance_size_msat=$(awk "BEGIN {print $balance_size*1000}")
 
   # lnd-1 -> cln-1
   lncli-sim connect $(lightning-cli-sim getinfo | jq -r '.id')@$(image-name corelightning) > /dev/null
