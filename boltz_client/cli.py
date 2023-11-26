@@ -50,12 +50,6 @@ def create_swap(payment_request: str, pair: str = "BTC/BTC"):
     click.echo()
     click.echo(f"boltz_id: {swap.id}")
     click.echo()
-    if pair == "L-BTC/BTC":
-        mempool_url = config.mempool_liquid_url
-    else:
-        mempool_url = config.mempool_url
-    click.echo(f"mempool.space url: {mempool_url}/address/{swap.address}")
-    click.echo()
     click.echo(f"refund privkey in wif: {refund_privkey_wif}")
     click.echo(f"redeem_script_hex: {swap.redeemScript}")
     click.echo()
@@ -143,11 +137,6 @@ def create_reverse_swap(sats: int, pair: str = "BTC/BTC", direction: str = "send
         click.echo(f"blinding key: {swap.blindingKey}")
     click.echo()
     click.echo(f"boltz_id: {swap.id}")
-    if pair == "L-BTC/BTC":
-        mempool_url = config.mempool_liquid_url
-    else:
-        mempool_url = config.mempool_url
-    click.echo(f"mempool.space url: {mempool_url}/address/{swap.lockupAddress}")
     click.echo()
     click.echo("invoice:")
     click.echo(swap.invoice)
@@ -200,13 +189,6 @@ def create_reverse_swap_and_claim(
         click.echo(f"blinding key: {swap.blindingKey}")
     click.echo()
     click.echo(f"boltz_id: {swap.id}")
-    if pair == "L-BTC/BTC":
-        mempool_url = config.mempool_liquid_url
-    else:
-        mempool_url = config.mempool_url
-    click.echo(
-        f"mempool.space url: {mempool_url.replace('/api', '')}/address/{swap.lockupAddress}"
-    )
     click.echo()
     click.echo("invoice:")
     click.echo(swap.invoice)
