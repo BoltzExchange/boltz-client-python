@@ -153,7 +153,7 @@ class MempoolClient:
 
     def get_fees(self) -> int:
         # mempool.space quirk, needed for regtest
-        api_url = self._api_url.replace("v1", "")
+        api_url = self._api_url.replace("/v1", "")
         data = self.request(
             "get",
             f"{api_url}/v1/fees/recommended",
