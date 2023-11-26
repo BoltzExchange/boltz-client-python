@@ -28,19 +28,22 @@ def get_txid(tx_hex: str, pair: str = "BTC/BTC") -> str:
         raise ValueError("Invalid transaction hex") from exc
 
 
-def validate_address(address: str, network: str, pair: str):
+def validate_address(address: str, network: str, pair: str) -> str:
     if pair == "L-BTC/BTC":
         net = LNETWORKS[network]
-        _address = to_unconfidential(address)
-        if not _address:
+        _address_unconfidential = to_unconfidential(address)
+        if not _address_unconfidential:
             raise ValueError("can not unconfidentialize address")
+        address = _address_unconfidential
+        _address = _address_unconfidential
     else:
         net = NETWORKS[network]
         _address = address
     try:
         addr = script.Script.from_address(_address) or script.Script()
         if addr.address(net) != address:
-            raise ValueError("Invalid network")
+            raise ValueError(f"Invalid network {network}")
+        return address
     except EmbitError as exc:
         raise ValueError(f"Invalid address: {exc}") from exc
 

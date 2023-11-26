@@ -244,9 +244,9 @@ class BoltzClient:
             except (BoltzApiException, BoltzSwapStatusException, AssertionError):
                 await asyncio.sleep(3)
 
-    def validate_address(self, address: str):
+    def validate_address(self, address: str) -> str:
         try:
-            validate_address(address, self.network, self.pair)
+            return validate_address(address, self.network, self.pair)
         except ValueError as exc:
             raise BoltzAddressValidationException(exc) from exc
 
@@ -264,10 +264,9 @@ class BoltzClient:
     ):
 
         self.validate_address(receive_address)
-        self.validate_address(lockup_address)
-
+        _lockup_address = self.validate_address(lockup_address)
         lockup_txid = await self.wait_for_txid_on_status(boltz_id)
-        lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
+        lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, _lockup_address)
 
         if not zeroconf and lockup_tx.status != "confirmed":
             await self.mempool.wait_for_tx_confirmed(lockup_tx.txid)
@@ -299,10 +298,9 @@ class BoltzClient:
     ) -> str:
         self.mempool.check_block_height(timeout_block_height)
         self.validate_address(receive_address)
-        self.validate_address(lockup_address)
-
+        _lockup_address = self.validate_address(lockup_address)
         lockup_txid = await self.wait_for_txid(boltz_id)
-        lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, lockup_address)
+        lockup_tx = await self.mempool.get_tx_from_txid(lockup_txid, _lockup_address)
         transaction = create_refund_tx(
             lockup_tx=lockup_tx,
             privkey_wif=privkey_wif,

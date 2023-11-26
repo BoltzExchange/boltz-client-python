@@ -53,7 +53,7 @@ def create_liquid_tx(
     preimage = bytes.fromhex(preimage_hex)
     private_key = wally.wif_to_bytes(
         privkey_wif,
-        wally.WALLY_ADDRESS_VERSION_WIF_MAINNET,
+        wally.WALLY_ADDRESS_VERSION_WIF_TESTNET,
         wally.WALLY_WIF_FLAG_COMPRESSED,
     )  # type: ignore
 

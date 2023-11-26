@@ -119,13 +119,12 @@ lightning-init(){
 
   channel_size=24000000 # 0.024 btc
   balance_size=12000000 # 0.12 btc
-  balance_size_msat=12000000000 # 0.12 btc
+  balance_size_msat=balance_size*1000
 
   # lnd-1 -> cln-1
   lncli-sim connect $(lightning-cli-sim getinfo | jq -r '.id')@$(image-name corelightning) > /dev/null
   echo "open channel from lnd to corelightning"
   lncli-sim openchannel $(lightning-cli-sim getinfo | jq -r '.id') $channel_size $balance_size > /dev/null
-
   bitcoin-cli-sim -generate 10 > /dev/null
   wait-for-lnd-channel
   wait-for-corelightning-channel
