@@ -100,8 +100,8 @@ class BoltzConfig:
     network_liquid: str = "liquidv1"
     pairs: list = field(default_factory=lambda: ["BTC/BTC", "L-BTC/BTC"])
     api_url: str = "https://boltz.exchange/api"
-    mempool_url: str = "https://mempool.space/api/v1"
-    mempool_liquid_url: str = "https://liquid.network/api/v1"
+    mempool_url: str = "https://mempool.space/api"
+    mempool_liquid_url: str = "https://liquid.network/api"
     referral_id: str = "dni"
 
 

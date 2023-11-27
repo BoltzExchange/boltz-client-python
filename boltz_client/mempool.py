@@ -108,7 +108,7 @@ class MempoolClient:
                     txid=tx["txid"],
                     script_pub_key=vout["scriptpubkey_address"],
                     vout_cnt=i,
-                    vout_amount=vout["value"],
+                    vout_amount=vout.get("value") or 0,
                     status=status,
                 )
         return None
@@ -136,10 +136,13 @@ class MempoolClient:
 
     async def get_tx_from_txid(self, txid: str, address: str) -> LockupData:
         while True:
-            tx = self.get_tx(txid)
-            output = self.find_output(tx, address)
-            if output:
-                return output
+            try:
+                tx = self.get_tx(txid)
+                output = self.find_output(tx, address)
+                if output:
+                    return output
+            except MempoolApiException:
+                pass
             await asyncio.sleep(3)
 
     async def get_tx_from_address(self, address: str) -> LockupData:
@@ -152,9 +155,11 @@ class MempoolClient:
         return lockup_tx
 
     def get_fees(self) -> int:
+        # mempool.space quirk, needed for regtest
+        api_url = self._api_url.replace("/v1", "")
         data = self.request(
             "get",
-            f"{self._api_url}/fees/recommended",
+            f"{api_url}/v1/fees/recommended",
             headers={"Content-Type": "application/json"},
         )
         return int(data["halfHourFee"])
