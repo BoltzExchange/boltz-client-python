@@ -108,7 +108,7 @@ class MempoolClient:
                     txid=tx["txid"],
                     script_pub_key=vout["scriptpubkey_address"],
                     vout_cnt=i,
-                    vout_amount=vout["value"],
+                    vout_amount=vout.get("value") or 0,
                     status=status,
                 )
         return None

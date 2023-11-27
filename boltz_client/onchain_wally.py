@@ -45,14 +45,17 @@ def create_liquid_tx(
         lasset_hex = "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
         confidential_addr_prefix = "ert"
         confidential_addr_family = "el"
+        wif_net = wally.WALLY_ADDRESS_VERSION_WIF_TESTNET
     elif receive_address.startswith("tex") or receive_address.startswith("tlq"):
         lasset_hex = "144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49"
         confidential_addr_prefix = "tex"
         confidential_addr_family = "tlq"
+        wif_net = wally.WALLY_ADDRESS_VERSION_WIF_TESTNET
     elif receive_address.startswith("ex") or receive_address.startswith("lq"):
         lasset_hex = "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d"
         confidential_addr_prefix = "ex"
         confidential_addr_family = "lq"
+        wif_net = wally.WALLY_ADDRESS_VERSION_WIF_MAINNET
     else:
         raise ValueError(f"Unknown prefix: {receive_address[:3]}")
 
@@ -62,7 +65,7 @@ def create_liquid_tx(
     preimage = bytes.fromhex(preimage_hex)
     private_key = wally.wif_to_bytes(
         privkey_wif,
-        wally.WALLY_ADDRESS_VERSION_WIF_TESTNET,
+        wif_net,
         wally.WALLY_WIF_FLAG_COMPRESSED,
     )  # type: ignore
 
