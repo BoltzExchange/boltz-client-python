@@ -136,10 +136,13 @@ class MempoolClient:
 
     async def get_tx_from_txid(self, txid: str, address: str) -> LockupData:
         while True:
-            tx = self.get_tx(txid)
-            output = self.find_output(tx, address)
-            if output:
-                return output
+            try:
+                tx = self.get_tx(txid)
+                output = self.find_output(tx, address)
+                if output:
+                    return output
+            except MempoolApiException:
+                pass
             await asyncio.sleep(3)
 
     async def get_tx_from_address(self, address: str) -> LockupData:
