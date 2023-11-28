@@ -1,5 +1,6 @@
 .DS_Store
 ._*
+.idea
 
 __pycache__
 *.py[cod]

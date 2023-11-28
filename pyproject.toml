@@ -63,4 +63,5 @@ disable = [
   "too-many-instance-attributes",
   "too-many-locals",
   "too-many-statements",
+  "broad-exception-caught",
 ]
