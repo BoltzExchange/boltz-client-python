@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "boltz_client"
-version = "0.2.0"
+version = "0.2.1"
 description = "python boltz client"
 license = "MIT"
 authors = ["dni <office@dnilabs.com>"]
