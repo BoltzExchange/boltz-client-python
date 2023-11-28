@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Any, Optional
 
 from .mempool import LockupData
 
@@ -23,24 +23,21 @@ class Network:
     def wif_net(self, wally) -> Any:
         if self.name == "mainnet":
             return wally.WALLY_ADDRESS_VERSION_WIF_MAINNET
-        else:
-            return wally.WALLY_ADDRESS_VERSION_WIF_TESTNET
+        return wally.WALLY_ADDRESS_VERSION_WIF_TESTNET
 
     def blinded_prefix(self, wally) -> Any:
         if self.name == "mainnet":
             return wally.WALLY_CA_PREFIX_LIQUID
-        elif self.name == "testnet":
+        if self.name == "testnet":
             return wally.WALLY_CA_PREFIX_LIQUID_TESTNET
-        else:
-            return wally.WALLY_CA_PREFIX_LIQUID_REGTEST
+        return wally.WALLY_CA_PREFIX_LIQUID_REGTEST
 
     def wally_network(self, wally) -> Any:
         if self.name == "mainnet":
             return wally.WALLY_NETWORK_LIQUID
-        elif self.name == "testnet":
+        if self.name == "testnet":
             return wally.WALLY_NETWORK_LIQUID_TESTNET
-        else:
-            return wally.WALLY_NETWORK_LIQUID_REGTEST
+        return wally.WALLY_NETWORK_LIQUID_REGTEST
 
     @staticmethod
     def parse_asset(asset: str) -> bytes:
@@ -51,19 +48,25 @@ class Network:
 NETWORKS: list[Network] = [
     Network(
         name="mainnet",
-        lbtc_asset=Network.parse_asset("6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d"),
+        lbtc_asset=Network.parse_asset(
+            "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d"
+        ),
         blech32_prefix="lq",
         bech32_prefix="ex",
     ),
     Network(
         name="testnet",
-        lbtc_asset=Network.parse_asset("144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49"),
+        lbtc_asset=Network.parse_asset(
+            "144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49"
+        ),
         blech32_prefix="tlq",
         bech32_prefix="tex",
     ),
     Network(
         name="regtest",
-        lbtc_asset=Network.parse_asset("5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"),
+        lbtc_asset=Network.parse_asset(
+            "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225"
+        ),
         blech32_prefix="el",
         bech32_prefix="ert",
     ),
@@ -101,7 +104,9 @@ def get_address_network(wally, address: str) -> Network:
 
 
 def is_possible_confidential_address(wally, address) -> bool:
-    expected_len = 2 + wally.EC_PUBLIC_KEY_LEN + wally.HASH160_LEN + wally.BASE58_CHECKSUM_LEN
+    expected_len = (
+        2 + wally.EC_PUBLIC_KEY_LEN + wally.HASH160_LEN + wally.BASE58_CHECKSUM_LEN
+    )
     try:
         return wally.base58_n_get_length(address, len(address)) == expected_len
     except ValueError:
@@ -109,7 +114,9 @@ def is_possible_confidential_address(wally, address) -> bool:
 
 
 # TODO: is this type hint compatible with all support Python versions of lnbits
-def decode_address(wally, network: Network, address: str) -> tuple[bytearray, bytearray]:
+def decode_address(
+    wally, network: Network, address: str
+) -> tuple[bytearray, bytearray]:
     if address.lower().startswith(network.blech32_prefix):
         blinding_key = wally.confidential_addr_segwit_to_ec_public_key(
             address, network.blech32_prefix
@@ -122,15 +129,19 @@ def decode_address(wally, network: Network, address: str) -> tuple[bytearray, by
             unconfidential_address, network.bech32_prefix, 0
         )
 
-    elif is_possible_confidential_address(wally, address):
-        unconfidential_address = wally.confidential_addr_to_addr(address, network.blinded_prefix(wally))
+    if is_possible_confidential_address(wally, address):
+        unconfidential_address = wally.confidential_addr_to_addr(
+            address, network.blinded_prefix(wally)
+        )
 
         blinding_key = wally.confidential_addr_to_ec_public_key(
             address,
             network.blinded_prefix(wally),
         )
 
-        return blinding_key, wally.address_to_scriptpubkey(unconfidential_address, network.wally_network(wally))
+        return blinding_key, wally.address_to_scriptpubkey(
+            unconfidential_address, network.wally_network(wally)
+        )
 
     raise ValueError("only confidential addresses are supported")
 
@@ -169,7 +180,9 @@ def create_liquid_tx(
     except ValueError as exc:
         raise ValueError("blinding_key must be hex encoded") from exc
 
-    receive_blinding_pubkey, receive_script_pubkey = decode_address(wally, network, receive_address)
+    receive_blinding_pubkey, receive_script_pubkey = decode_address(
+        wally, network, receive_address
+    )
 
     # parse lockup tx
     lockup_transaction = wally.tx_from_hex(
