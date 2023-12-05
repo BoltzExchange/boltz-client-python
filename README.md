@@ -1,5 +1,5 @@
 # Boltz Python Client
-Boltz Reference Client in Python, used by e.g. https://github.com/lnbits/boltz
+Boltz Reference Client in Python, implementing mainchain and liquid submarine swaps. Used by e.g. https://github.com/lnbits/boltz.
 
 ## installing
 ```console
