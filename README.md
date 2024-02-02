@@ -23,4 +23,4 @@ chmod +x regtest
 poetry run pytest
 ```
 
-Or install the latest release from [PyPI](https://pypi.org/project/boltz-client) via `pip install boltz-client`.
+Or install the latest release from [PyPI](https://pypi.org/project/boltz-client) via `pip install boltz_client`.
