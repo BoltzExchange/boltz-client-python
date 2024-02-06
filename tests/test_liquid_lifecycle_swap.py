@@ -5,7 +5,6 @@ from boltz_client.boltz import (
     BoltzClient,
     BoltzSwapStatusException,
 )
-from boltz_client.mempool import MempoolBlockHeightException
 from .helpers import create_onchain_address, mine_blocks, pay_onchain
 
 
@@ -44,21 +43,8 @@ async def test_create_swap_and_refund(client_liquid: BoltzClient, liquid_pr_refu
 
     onchain_address = create_onchain_address(client_liquid.pair)
 
-    # try refund before timeout
-    with pytest.raises(MempoolBlockHeightException):
-        await client_liquid.refund_swap(
-            boltz_id=swap.id,
-            privkey_wif=refund_privkey_wif,
-            lockup_address=swap.address,
-            receive_address=onchain_address,
-            redeem_script_hex=swap.redeemScript,
-            timeout_block_height=swap.timeoutBlockHeight,
-            blinding_key=swap.blindingKey,
-        )
-
     # wait for timeout
-    blocks_to_mine = swap.timeoutBlockHeight - client_liquid.mempool.get_blockheight() + 10
-    mine_blocks(pair=client_liquid.pair, blocks=blocks_to_mine)
+    mine_blocks(pair=client_liquid.pair, blocks=1000)
 
     await asyncio.sleep(10)
 

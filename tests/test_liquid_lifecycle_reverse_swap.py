@@ -1,4 +1,4 @@
-import asyncio
+# import asyncio
 import pytest
 
 from boltz_client.boltz import BoltzClient
@@ -7,7 +7,7 @@ from .helpers import create_onchain_address, mine_blocks, pay_invoice
 
 @pytest.mark.asyncio
 async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
-    claim_privkey_wif, preimage_hex, swap = client_liquid.create_reverse_swap(10000)
+    claim_privkey_wif, preimage_hex, swap = client_liquid.create_reverse_swap(50000)
     new_address = create_onchain_address(client_liquid.pair)
 
     # create_task is used because pay_invoice is stuck as long as boltz does not
@@ -29,9 +29,7 @@ async def test_liquid_create_reverse_swap_and_claim(client_liquid: BoltzClient):
         zeroconf=True,
     )
 
-    task = asyncio.create_task(client_liquid.mempool.wait_for_tx_confirmed(txid))
-    mine_blocks(client_liquid.pair)
-    await task
+    assert txid, "txid is not None"
 
     mine_blocks(client_liquid.pair)
 

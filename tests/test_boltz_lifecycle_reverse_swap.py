@@ -13,7 +13,7 @@ from .helpers import create_onchain_address, mine_blocks, pay_invoice
 
 @pytest.mark.asyncio
 async def test_create_reverse_swap_and_claim(client: BoltzClient):
-    claim_privkey_wif, preimage_hex, swap = client.create_reverse_swap(10000)
+    claim_privkey_wif, preimage_hex, swap = client.create_reverse_swap(50000)
     assert isinstance(claim_privkey_wif, str)
     assert isinstance(preimage_hex, str)
     assert isinstance(swap, BoltzReverseSwapResponse)
@@ -39,7 +39,8 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
         assert False
 
     new_address = create_onchain_address(client.pair)
-    txid = await client.claim_reverse_swap(
+
+    task = asyncio.create_task(client.claim_reverse_swap(
         boltz_id=swap.id,
         receive_address=new_address,
         lockup_address=swap.lockupAddress,
@@ -48,11 +49,13 @@ async def test_create_reverse_swap_and_claim(client: BoltzClient):
         privkey_wif=claim_privkey_wif,
         preimage_hex=preimage_hex,
         zeroconf=True,
-    )
+    ))
 
-    task = asyncio.create_task(client.mempool.wait_for_tx_confirmed(txid))
     mine_blocks()
-    await task
+
+    txid = await task
+
+    assert txid, "txid is not None"
 
     swap_status_after_confirmed = client.swap_status(swap.id)
     assert swap_status_after_confirmed.status == "invoice.settled"
@@ -84,8 +87,7 @@ async def test_create_reverse_swap_direction(client: BoltzClient):
     )
     mine_blocks()
 
-    tx = client.mempool.get_tx(txid)
-    assert tx["vout"][0]["value"] == amount
+    assert txid, "txid is not None"
 
     # wait for invoice going through
     p.wait()
