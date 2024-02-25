@@ -12,8 +12,6 @@ config = BoltzConfig(
     network="regtest",
     network_liquid="elementsregtest",
     api_url="http://localhost:9001",
-    mempool_url="http://localhost:8999/api/v1",
-    mempool_liquid_url="http://localhost:8998/api/v1",
 )
 
 
@@ -53,7 +51,7 @@ async def raw_tx():
 
 @pytest_asyncio.fixture(scope="session")
 async def pr():
-    invoice = get_invoice(10000, "pr-1")
+    invoice = get_invoice(50000, "pr-1")
     yield invoice["bolt11"]
 
 
@@ -65,17 +63,17 @@ async def pr_small():
 
 @pytest_asyncio.fixture(scope="session")
 async def pr_refund():
-    invoice = get_invoice(10001, "pr-3")
+    invoice = get_invoice(50001, "pr-3")
     yield invoice["bolt11"]
 
 
 @pytest_asyncio.fixture(scope="session")
 async def liquid_pr():
-    invoice = get_invoice(10000, "liquid-pr-1")
+    invoice = get_invoice(55555, "liquid-pr-1")
     yield invoice["bolt11"]
 
 
 @pytest_asyncio.fixture(scope="session")
 async def liquid_pr_refund():
-    invoice = get_invoice(10001, "liquid-pr-2")
+    invoice = get_invoice(50001, "liquid-pr-2")
     yield invoice["bolt11"]

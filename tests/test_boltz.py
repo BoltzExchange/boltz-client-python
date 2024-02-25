@@ -14,7 +14,6 @@ async def test_api_exception():
     config = BoltzConfig(
         network="regtest",
         api_url="http://localhost:9999",
-        mempool_url="http://localhost:8080",
     )
     with pytest.raises(BoltzApiException):
         BoltzClient(config)
